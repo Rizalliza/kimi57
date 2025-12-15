@@ -25,16 +25,19 @@ describe('processSwap CPMM math', () => {
 
         // Expected calculations (CPMM: dy = y - (x*y)/(x+dxAfterFee)):
         // x=1000, y=2000, dxHuman=1, fee=0.003
-        // k = x*y = 2,000,000
-        // dxAfterFee = 0.997
-        // newX = 1000.997
-        // newY = k/newX ≈ 1,998.0079860379203
-        // dy = 2000 - newY ≈ 1.9920139620796817
-        // executionPrice = dy/dxHuman ≈ 1.9920139620796817, midPrice = 2
-        const expectedDy = 1.9920139620796817;
-        const expectedExecPrice = expectedDy;
-        const expectedFee = 0.003 * 1;
-        const expectedImpactPct = ((2 - expectedExecPrice) / 2) * 100;
+        const xHuman = Number(pool.xReserve) / 1e6;
+        const yHuman = Number(pool.yReserve) / 1e6;
+        const dxHuman = Number(dxAtomic) / 1e6; // dx = 1 human unit
+        const fee = pool.fee;
+        const k = xHuman * yHuman;
+        const dxAfterFee = dxHuman * (1 - fee);
+        const newX = xHuman + dxAfterFee;
+        const newY = k / newX;
+        const expectedDy = yHuman - newY;
+        const expectedExecPrice = expectedDy / dxHuman; // dxHuman = 1
+        const expectedMidPrice = yHuman / xHuman;
+        const expectedFee = fee * dxHuman;
+        const expectedImpactPct = ((expectedMidPrice - expectedExecPrice) / expectedMidPrice) * 100;
 
         const toNum = (x) => Number(x);
 
@@ -42,6 +45,6 @@ describe('processSwap CPMM math', () => {
         assert.ok(Math.abs(toNum(executionPrice) - expectedExecPrice) < 1e-9, 'executionPrice should align with dy/dx');
         assert.ok(Math.abs(toNum(feePaidHuman) - expectedFee) < 1e-6, 'feePaidHuman should apply fee rate to dx');
         assert.ok(Math.abs(toNum(priceImpactPct) - expectedImpactPct) < 1e-3, 'priceImpactPct should reflect deviation from mid-price');
-        assert.ok(Math.abs(toNum(midPrice) - 2) < 1e-6, 'midPrice should be y/x');
+        assert.ok(Math.abs(toNum(midPrice) - expectedMidPrice) < 1e-6, 'midPrice should be y/x');
     });
 });
