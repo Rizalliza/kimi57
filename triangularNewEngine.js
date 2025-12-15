@@ -123,7 +123,7 @@ function tryLoadSdkAdapter() {
         // Optional. If it fails, engine still works with reserve-based CPMM approximation for dlmm/cpmm
         // and will SKIP clmm/whirlpool pools.
         // Your loaderSDK.js can export { quoteSwap } or { simulateSwap } etc.
-        const sdk = require('./loaderSDK.js');
+        const sdk = require('./utils/loaderSDK.js');
         if (sdk && typeof sdk.quoteSwap === 'function') {
             return {
                 name: 'loaderSDK.quoteSwap',

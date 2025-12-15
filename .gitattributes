@@ -1,0 +1,3 @@
+output/FINAL_reserves_pool_array_fixed.json -diff
+output/math_ready_pools_final.json -diff
+output/static_pools_built_with_fresh_reserves.json -diff
