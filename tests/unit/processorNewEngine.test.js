@@ -23,10 +23,14 @@ describe('processSwap CPMM math', () => {
             opts: { isReverse: false }
         });
 
-        // Expected calculations:
+        // Expected calculations (CPMM: dy = y - (x*y)/(x+dxAfterFee)):
         // x=1000, y=2000, dxHuman=1, fee=0.003
-        // dxAfterFee=0.997, newX=1000.997, newY= (1000*2000)/1000.997 ≈ 1998.007986
-        // dy ≈ 1.992013962, executionPrice ≈ 1.992013962, midPrice = 2
+        // k = x*y = 2,000,000
+        // dxAfterFee = 0.997
+        // newX = 1000.997
+        // newY = k/newX ≈ 1,998.0079860379203
+        // dy = 2000 - newY ≈ 1.9920139620796817
+        // executionPrice = dy/dxHuman ≈ 1.9920139620796817, midPrice = 2
         const expectedDy = 1.9920139620796817;
         const expectedExecPrice = expectedDy;
         const expectedFee = 0.003 * 1;
