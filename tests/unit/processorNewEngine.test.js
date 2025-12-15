@@ -36,7 +36,8 @@ describe('processSwap CPMM math', () => {
         const expectedDy = yHuman - newY;
         const expectedExecPrice = expectedDy / dxHuman; // effective execution price including fee + slippage
         const expectedMidPrice = yHuman / xHuman;
-        const expectedFee = fee * dxHuman;
+        const expectedFee = dxHuman - dxAfterFee; // fee removed from input (equiv to dxHuman * fee)
+        // priceImpact here follows the engine: compares fee-adjusted execution price vs mid-price
         const expectedImpactPct = ((expectedMidPrice - expectedExecPrice) / expectedMidPrice) * 100;
 
         const toNum = (x) => Number(x);
