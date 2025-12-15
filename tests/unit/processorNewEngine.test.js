@@ -34,7 +34,7 @@ describe('processSwap CPMM math', () => {
         const newX = xHuman + dxAfterFee;
         const newY = k / newX;
         const expectedDy = yHuman - newY;
-        const expectedExecPrice = expectedDy / dxHuman; // dxHuman = 1
+        const expectedExecPrice = expectedDy / dxHuman; // execution price = dy/dx
         const expectedMidPrice = yHuman / xHuman;
         const expectedFee = fee * dxHuman;
         const expectedImpactPct = ((expectedMidPrice - expectedExecPrice) / expectedMidPrice) * 100;
