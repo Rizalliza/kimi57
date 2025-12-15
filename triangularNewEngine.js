@@ -1,566 +1,459 @@
-// triangularNewEngine.js
-// Unified triangular arbitrage simulator with strict unit propagation and safer reserve parsing.
-// Supports A -> B -> C -> A routes (defaults: A=SOL, C=USDC).
-//
-// Key fixes vs earlier versions:
-// 1) NEVER treat reserve_x / reserve_y (vault addresses) as amounts.
-// 2) Always align reserves to mints (mint_x/mint_y when present).
-// 3) Only propagate ATOMIC amounts between legs.
-// 4) computeTotalCostTokenOut is analytical-only; amounts propagate from processSwap output (already fee+slippage affected).
-// 5) Optional sanity filtering to drop mispriced SOL/USDC pools that cause fake 1000% “profits”.
+'use strict';
+
+/**
+ * triangularNewEngine.js (FULL REPLACEMENT)
+ *
+ * This module is self-contained:
+ *   - loads pools from a JSON file (metadata or cached reserves)
+ *   - enriches pools with LIVE reserves using unifiedReservesFetcher
+ *   - runs triangular arbitrage simulation using processorNewEngine
+ *
+ * IMPORTANT RULES:
+ *   - Atomic amounts are ALWAYS integers (strings or Decimals), never fractional.
+ *   - processSwap consumes atomic input and returns HUMAN output (dyHuman).
+ *   - We convert dyHuman -> dyAtomic using FLOOR (integer) for propagation.
+ *   - computeTotalCostTokenOut is analytical only (ranking/filters), not deducted from dy.
+ */
 
 const fs = require('fs');
 const path = require('path');
-const nodeProcess = require('node:process');
-const Decimal = require('decimal.js');
 
-const processor = require('./processorNewEngine.js');
+const { Decimal, D, atomicToHuman, humanToAtomic, processSwap, computeTotalCostTokenOut } = require('./processorNewEngine.js');
+const { UnifiedReservesFetcher, detectType } = require('./unifiedReservesFetcher.js');
 
-const WSOL_MINT = 'So11111111111111111111111111111111111111112';
-const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+// Well-known mints (mainnet)
+const MINT_SOL = 'So11111111111111111111111111111111111111112';
+const MINT_WSOL = 'So11111111111111111111111111111111111111112'; // treat as same for routing unless you wrap separately
+const MINT_USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
-// ---------- helpers ----------
-function toDecimal(v) { return processor.toDecimal(v); }
+// -------------------------
+// Helpers
+// -------------------------
+function shortMint(m) { return (m || '').slice(0, 6) + '...' + (m || '').slice(-4); }
 
-function isDigitString(s) {
-    return typeof s === 'string' && /^[0-9]+$/.test(s.trim());
+function safeUpper(s) { return (s || '').toString().toUpperCase(); }
+
+function normalizePool(raw) {
+    const p = { ...raw };
+    p.poolAddress = p.poolAddress || p.id || p.address || p.raw?.address;
+    p.dex = (p.dex || p.raw?.dex || p._original?.dex || 'unknown').toString().toLowerCase();
+
+    // unify type
+    p.type = detectType(p);
+
+    // tokens
+    const baseToken = p.baseToken || {};
+    const quoteToken = p.quoteToken || {};
+
+    p.baseMint = p.baseMint || baseToken.mint || p.raw?.mint_x || p.raw?.mintX || p._original?.raw?.mint_x;
+    p.quoteMint = p.quoteMint || quoteToken.mint || p.raw?.mint_y || p.raw?.mintY || p._original?.raw?.mint_y;
+
+    p.baseDecimals = (p.baseDecimals ?? baseToken.decimals ?? p._original?.baseDecimals ?? 0);
+    p.quoteDecimals = (p.quoteDecimals ?? quoteToken.decimals ?? p._original?.quoteDecimals ?? 0);
+
+    p.baseToken = { mint: p.baseMint, symbol: baseToken.symbol || p.baseSymbol || p.raw?.baseSymbol || '', decimals: p.baseDecimals };
+    p.quoteToken = { mint: p.quoteMint, symbol: quoteToken.symbol || p.quoteSymbol || p.raw?.quoteSymbol || '', decimals: p.quoteDecimals };
+
+    // reserves (may be filled later)
+    p.xReserve = p.xReserve ?? p.raw?.reserve_x_amount ?? p._original?.raw?.reserve_x_amount;
+    p.yReserve = p.yReserve ?? p.raw?.reserve_y_amount ?? p._original?.raw?.reserve_y_amount;
+
+    // fee
+    const fee = p.fee ?? p.raw?.fee ?? p.raw?.base_fee_percentage ?? p._original?.raw?.base_fee_percentage ?? 0;
+    // Some sources store percentage string like "0.2" for 0.2%; convert conservatively if > 0.5
+    let feeNum = Number(fee);
+    if (!Number.isFinite(feeNum)) feeNum = 0;
+    if (feeNum > 0.5) feeNum = feeNum / 100; // "1.5" => 0.015
+    p.fee = feeNum;
+
+    return p;
 }
 
-function isNumericAtomic(v) {
-    if (v === null || v === undefined) return false;
-    if (typeof v === 'bigint') return v > 0n;
-    if (typeof v === 'number') return Number.isFinite(v) && v > 0;
-    if (typeof v === 'string') {
-        const t = v.trim();
-        if (t.length === 0) return false;
-        if (isDigitString(t)) return true;
-        if (/^[0-9]+(\.[0-9]+)?$/.test(t)) return true;
-        return false;
+function loadPoolsFromFile(filePath) {
+    const abs = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+    const rawTxt = fs.readFileSync(abs, 'utf8');
+    const arr = JSON.parse(rawTxt);
+    if (!Array.isArray(arr)) throw new Error(`Pool file is not an array: ${abs}`);
+
+    const pools = arr.map(normalizePool).filter(p => !!p.poolAddress && !!p.baseMint && !!p.quoteMint);
+    return { pools, abs };
+}
+
+/**
+ * Determine direction for a swap on a given pool.
+ * Returns { isReverse, inMint, outMint, inDecimals, outDecimals }
+ * Convention:
+ *   isReverse=false => base -> quote
+ *   isReverse=true  => quote -> base
+ */
+function computeDirection(pool, inputMint, outputMint) {
+    const baseMint = pool.baseMint;
+    const quoteMint = pool.quoteMint;
+
+    if (inputMint === baseMint && outputMint === quoteMint) {
+        return {
+            isReverse: false,
+            inMint: baseMint,
+            outMint: quoteMint,
+            inDecimals: pool.baseDecimals,
+            outDecimals: pool.quoteDecimals
+        };
     }
-    try { return toDecimal(v).isFinite() && toDecimal(v).gt(0); } catch { return false; }
-}
-
-function floorAtomic(v) {
-    const d = toDecimal(v);
-    if (!d.isFinite()) return new Decimal(0);
-    return d.floor();
-}
-
-function shortMint(m) {
-    if (!m) return 'unknown';
-    const s = String(m);
-    return s.slice(0, 6) + '...' + s.slice(-4);
-}
-
-function tokenDecimalsByMint(mint, fallback = 9) {
-    const m = String(mint || '');
-    if (m === WSOL_MINT) return 9;
-    if (m === USDC_MINT) return 6;
-    return fallback;
-}
-
-// ---------- reserve / mint extraction (critical) ----------
-function extractMintXY(rawPool) {
-    const raw = rawPool?.raw || rawPool?._original?.raw || rawPool?._original || null;
-
-    const mintX =
-        raw?.mint_x || raw?.mintX || rawPool?.mint_x || rawPool?.mintX ||
-        rawPool?.baseMint || rawPool?.baseToken?.mint || null;
-
-    const mintY =
-        raw?.mint_y || raw?.mintY || rawPool?.mint_y || rawPool?.mintY ||
-        rawPool?.quoteMint || rawPool?.quoteToken?.mint || null;
-
-    return { mintX: mintX ? String(mintX) : null, mintY: mintY ? String(mintY) : null, raw };
-}
-
-function extractReserveAmountsXY(rawPool, raw) {
-    // IMPORTANT: reserve_x and reserve_y are often addresses (vaults). Never accept those as amounts.
-    const candidatesX = [
-        rawPool?.xReserve, rawPool?.liquidityX, rawPool?.reserve_x_amount,
-        raw?.reserve_x_amount, raw?.reserveXAmount, raw?.liquidity_x, raw?.liquidityX,
-    ];
-    const candidatesY = [
-        rawPool?.yReserve, rawPool?.liquidityY, rawPool?.reserve_y_amount,
-        raw?.reserve_y_amount, raw?.reserveYAmount, raw?.liquidity_y, raw?.liquidityY,
-    ];
-
-    let x = candidatesX.find(isNumericAtomic);
-    let y = candidatesY.find(isNumericAtomic);
-
-    x = x !== undefined ? floorAtomic(x) : null;
-    y = y !== undefined ? floorAtomic(y) : null;
-
-    return { xAtomic: x, yAtomic: y };
-}
-
-function extractTokenMeta(rawPool, mintX, mintY) {
-    const baseMint = String(rawPool?.baseToken?.mint || rawPool?.baseMint || '');
-    const quoteMint = String(rawPool?.quoteToken?.mint || rawPool?.quoteMint || '');
-
-    const baseDec = rawPool?.baseToken?.decimals ?? rawPool?.baseDecimals;
-    const quoteDec = rawPool?.quoteToken?.decimals ?? rawPool?.quoteDecimals;
-
-    const baseSym = rawPool?.baseToken?.symbol || rawPool?.baseSymbol || '';
-    const quoteSym = rawPool?.quoteToken?.symbol || rawPool?.quoteSymbol || '';
-
-    let xDecimals = tokenDecimalsByMint(mintX, baseDec ?? quoteDec ?? 9);
-    let yDecimals = tokenDecimalsByMint(mintY, quoteDec ?? baseDec ?? 9);
-
-    let xSymbol = '';
-    let ySymbol = '';
-
-    if (mintX && mintX === baseMint) { xDecimals = tokenDecimalsByMint(mintX, baseDec ?? 9); xSymbol = baseSym; }
-    else if (mintX && mintX === quoteMint) { xDecimals = tokenDecimalsByMint(mintX, quoteDec ?? 9); xSymbol = quoteSym; }
-
-    if (mintY && mintY === quoteMint) { yDecimals = tokenDecimalsByMint(mintY, quoteDec ?? 9); ySymbol = quoteSym; }
-    else if (mintY && mintY === baseMint) { yDecimals = tokenDecimalsByMint(mintY, baseDec ?? 9); ySymbol = baseSym; }
-
-    if (!xSymbol) {
-        if (mintX === WSOL_MINT) xSymbol = 'SOL';
-        else if (mintX === USDC_MINT) xSymbol = 'USDC';
-        else xSymbol = shortMint(mintX);
+    if (inputMint === quoteMint && outputMint === baseMint) {
+        return {
+            isReverse: true,
+            inMint: quoteMint,
+            outMint: baseMint,
+            inDecimals: pool.quoteDecimals,
+            outDecimals: pool.baseDecimals
+        };
     }
-    if (!ySymbol) {
-        if (mintY === WSOL_MINT) ySymbol = 'SOL';
-        else if (mintY === USDC_MINT) ySymbol = 'USDC';
-        else ySymbol = shortMint(mintY);
-    }
-
-    return { xDecimals, yDecimals, xSymbol, ySymbol };
+    return null;
 }
 
-function normalizePool(rawPool) {
-    const poolAddress = rawPool?.poolAddress || rawPool?.id || rawPool?.address || rawPool?.raw?.address || rawPool?._original?.raw?.address;
-    if (!poolAddress) return null;
-
-    const dex = String(rawPool?.dex || rawPool?.raw?.dex || rawPool?._original?.dex || 'unknown').toLowerCase();
-    const poolType = String(rawPool?.poolType || rawPool?.type || rawPool?.raw?.poolType || '').toLowerCase();
-
-    const { mintX, mintY, raw } = extractMintXY(rawPool);
-    if (!mintX || !mintY) return null;
-
-    const { xAtomic, yAtomic } = extractReserveAmountsXY(rawPool, raw);
-    const meta = extractTokenMeta(rawPool, mintX, mintY);
-
-    const tvl = rawPool?.tvl ?? rawPool?.liquidity?.tvl ?? rawPool?.liquidity ?? raw?.liquidity ?? 0;
-    const volume24h = rawPool?.volume24h ?? raw?.trade_volume_24h ?? 0;
-
-    return {
-        poolAddress: String(poolAddress),
-        dex,
-        poolType,
-        fee: rawPool?.fee ?? rawPool?.feePct ?? raw?.base_fee_percentage ?? raw?.fee ?? 0,
-        mintX, mintY,
-        xReserveAtomic: xAtomic,
-        yReserveAtomic: yAtomic,
-        xDecimals: meta.xDecimals,
-        yDecimals: meta.yDecimals,
-        xSymbol: meta.xSymbol,
-        ySymbol: meta.ySymbol,
-        tvl: Number(tvl || 0),
-        volume24h: Number(volume24h || 0),
-        _raw: rawPool,
-    };
+function floorAtomicFromHuman(human, decimals) {
+    return humanToAtomic(D(human), decimals); // already floor()
 }
 
-function impliedPriceYperX(pool) {
-    if (!pool?.xReserveAtomic || !pool?.yReserveAtomic) return null;
-    const xH = pool.xReserveAtomic.div(new Decimal(10).pow(pool.xDecimals));
-    const yH = pool.yReserveAtomic.div(new Decimal(10).pow(pool.yDecimals));
-    if (xH.lte(0) || yH.lte(0)) return null;
-    return yH.div(xH);
-}
-
-function loadPoolsFromJsonFile(filePath, opts = {}) {
-    const abs = path.isAbsolute(filePath) ? filePath : path.join(nodeProcess.cwd(), filePath);
-    const raw = JSON.parse(fs.readFileSync(abs, 'utf8'));
-    if (!Array.isArray(raw)) throw new Error('Pools JSON must be an array');
-
-    const minTvl = opts.minTvl ?? 0;
-    const minVolume24h = opts.minVolume24h ?? 0;
-
-    const normalized = [];
-    let droppedMissingReserves = 0;
-
-    for (const p of raw) {
-        const n = normalizePool(p);
-        if (!n) continue;
-
-        if (!n.xReserveAtomic || !n.yReserveAtomic || n.xReserveAtomic.lte(0) || n.yReserveAtomic.lte(0)) {
-            droppedMissingReserves++;
-            continue;
+// -------------------------
+// SDK adapter (optional)
+// -------------------------
+function tryLoadSdkAdapter() {
+    try {
+        // Optional. If it fails, engine still works with reserve-based CPMM approximation for dlmm/cpmm
+        // and will SKIP clmm/whirlpool pools.
+        // Your loaderSDK.js can export { quoteSwap } or { simulateSwap } etc.
+        const sdk = require('./loaderSDK.js');
+        if (sdk && typeof sdk.quoteSwap === 'function') {
+            return {
+                name: 'loaderSDK.quoteSwap',
+                async quoteSwap({ pool, inputMint, outputMint, dxAtomic }) {
+                    return await sdk.quoteSwap({ pool, inputMint, outputMint, dxAtomic });
+                }
+            };
         }
-
-        if (Number(n.tvl || 0) < minTvl) continue;
-        if (Number(n.volume24h || 0) < minVolume24h) continue;
-
-        normalized.push(n);
+        if (sdk && typeof sdk.simulateSwapAtomic === 'function') {
+            return {
+                name: 'loaderSDK.simulateSwapAtomic',
+                async quoteSwap({ pool, inputMint, outputMint, dxAtomic }) {
+                    return await sdk.simulateSwapAtomic({ pool, inputMint, outputMint, dxAtomic });
+                }
+            };
+        }
+        return null;
+    } catch {
+        return null;
     }
-
-    return { pools: normalized, droppedMissingReserves, absPath: abs };
 }
 
-// ---------- oriented pool builder (mint-aligned) ----------
-function buildOrientedPoolForLeg(pool, inputMint, outputMint) {
-    const inMint = String(inputMint);
-    const outMint = String(outputMint);
+// -------------------------
+// Leg simulation
+// -------------------------
+async function simulateLeg({ pool, inputMint, outputMint, dxAtomic, opts = {} }) {
+    const dir = computeDirection(pool, inputMint, outputMint);
+    if (!dir) return { ok: false, reason: 'mint_mismatch' };
 
-    const hasIn = (pool.mintX === inMint) || (pool.mintY === inMint);
-    const hasOut = (pool.mintX === outMint) || (pool.mintY === outMint);
-    if (!hasIn || !hasOut) return null;
+    const dxA = D(dxAtomic);
+    if (dxA.lte(0)) return { ok: false, reason: 'dx<=0' };
 
-    const xToY = (pool.mintX === inMint && pool.mintY === outMint);
-    const yToX = (pool.mintY === inMint && pool.mintX === outMint);
-    if (!xToY && !yToX) return null;
+    // Ensure reserves exist for math
+    const hasReserves = pool.xReserve !== undefined && pool.yReserve !== undefined && D(pool.xReserve).gt(0) && D(pool.yReserve).gt(0);
+    const type = (pool.type || '').toString().toLowerCase();
 
-    const xReserve = xToY ? pool.xReserveAtomic : pool.yReserveAtomic;
-    const yReserve = xToY ? pool.yReserveAtomic : pool.xReserveAtomic;
+    // For CLMM/Whirlpool, prefer SDK (reserve-only CPMM is incorrect).
+    const sdkAdapter = opts.sdkAdapter || null;
+    if ((type === 'clmm' || type === 'whirlpool') && sdkAdapter) {
+        const r = await sdkAdapter.quoteSwap({ pool, inputMint, outputMint, dxAtomic: dxA.toString() });
+        // Expecting { dyAtomic, outDecimals, feePaidAtomic? } or { dyHuman, outDecimals }
+        if (r && r.dyAtomic) {
+            const dyA = D(r.dyAtomic).floor();
+            const outDec = r.outDecimals ?? dir.outDecimals;
+            const dyH = atomicToHuman(dyA, outDec);
+            return {
+                ok: true,
+                via: `sdk:${sdkAdapter.name}`,
+                dxAtomic: dxA,
+                dxHuman: atomicToHuman(dxA, dir.inDecimals),
+                dyAtomic: dyA,
+                dyHuman: dyH,
+                inDecimals: dir.inDecimals,
+                outDecimals: outDec,
+                feePaidHuman: r.feePaidHuman ? D(r.feePaidHuman) : D(0),
+                midPrice: r.midPrice ? D(r.midPrice) : D(0),
+                executionPrice: r.executionPrice ? D(r.executionPrice) : (atomicToHuman(dyA, outDec).div(atomicToHuman(dxA, dir.inDecimals))),
+                priceImpactPct: r.priceImpactPct ? D(r.priceImpactPct) : D(0)
+            };
+        }
+        // If SDK failed, fall through to skip / reserve math if available.
+    }
 
-    const baseDecimals = xToY ? pool.xDecimals : pool.yDecimals;
-    const quoteDecimals = xToY ? pool.yDecimals : pool.xDecimals;
+    if (!hasReserves) return { ok: false, reason: 'missing_reserves' };
+
+    // Reserve-based simulation (CPMM for cpmm/dlmm)
+    let sim;
+    try {
+        sim = await processSwap({
+            pool,
+            dx: dxA.toString(),
+            opts: { feeRate: pool.fee, isReverse: dir.isReverse }
+        });
+    } catch (e) {
+        return { ok: false, reason: `processSwap_failed:${e.message || e}` };
+    }
+
+    const dxHuman = atomicToHuman(dxA, dir.inDecimals);
+    const dyHuman = D(sim.dyHuman || 0);
+    const dyAtomic = floorAtomicFromHuman(dyHuman, dir.outDecimals);
+
+    // Analytical costs in token-out
+    const cost = await computeTotalCostTokenOut(pool, dxA.toString(), { feeRate: pool.fee, isReverse: dir.isReverse });
 
     return {
-        type: pool.poolType,
-        xReserve: xReserve.toString(),
-        yReserve: yReserve.toString(),
-        baseDecimals,
-        quoteDecimals,
-        fee: pool.fee,
-        _poolAddress: pool.poolAddress,
-        _dex: pool.dex,
-        _inMint: inMint,
-        _outMint: outMint,
+        ok: true,
+        via: 'math',
+        dxAtomic: dxA,
+        dxHuman,
+        dyAtomic,
+        dyHuman,
+        inDecimals: dir.inDecimals,
+        outDecimals: dir.outDecimals,
+        feePaidHuman: D(sim.feePaidHuman || 0),
+        midPrice: D(sim.midPrice || 0),
+        executionPrice: D(sim.executionPrice || 0),
+        priceImpactPct: D(sim.priceImpactPct || 0),
+        cost
     };
 }
 
-// ---------- leg simulation ----------
-async function simulateLeg({ pool, inputMint, outputMint, dxAtomic }) {
-    const oriented = buildOrientedPoolForLeg(pool, inputMint, outputMint);
-    if (!oriented) return { ok: false, reason: 'pool not oriented for leg' };
-
-    const dxA = floorAtomic(dxAtomic);
-    if (dxA.lte(0)) return { ok: false, reason: 'dxAtomic <= 0' };
-
-    const sim = await processor.processSwap({
-        pool: oriented,
-        dxAtomic: dxA.toString(),
-        opts: { feeRate: oriented.fee, omitDenorm: false }
-    });
-
-    const outDecimals = oriented.quoteDecimals;
-    const dyAtomic = processor.humanToAtomic(sim.dy, outDecimals).floor();
-
-    const cost = await processor.computeTotalCostTokenOut(oriented, dxA.toString(), { feeRate: oriented.fee });
-
-    return { ok: true, oriented, sim, dxAtomic, dyAtomic, cost };
-}
-
-// ---------- sanity filtering ----------
-function median(values) {
-    const a = values.filter(v => v && v.isFinite()).map(v => v.toNumber()).sort((x, y) => x - y);
-    if (a.length === 0) return null;
-    const mid = Math.floor(a.length / 2);
-    if (a.length % 2) return new Decimal(a[mid]);
-    return new Decimal((a[mid - 1] + a[mid]) / 2);
-}
-
-function computeSolUsdcMedianPrice(pools) {
-    const prices = [];
+// -------------------------
+// Triangular search
+// -------------------------
+function indexPools(pools) {
+    // Map mintPairKey => pools
+    const byPair = new Map();
     for (const p of pools) {
-        const isPair = (p.mintX === WSOL_MINT && p.mintY === USDC_MINT) || (p.mintX === USDC_MINT && p.mintY === WSOL_MINT);
-        if (!isPair) continue;
-        const priceYperX = impliedPriceYperX(p);
-        if (!priceYperX) continue;
-        const usdcPerSol = (p.mintX === WSOL_MINT) ? priceYperX : new Decimal(1).div(priceYperX);
-        if (usdcPerSol.isFinite() && usdcPerSol.gt(0)) prices.push(usdcPerSol);
+        const a = p.baseMint;
+        const b = p.quoteMint;
+        if (!a || !b) continue;
+        const key1 = `${a}-${b}`;
+        const key2 = `${b}-${a}`;
+        if (!byPair.has(key1)) byPair.set(key1, []);
+        if (!byPair.has(key2)) byPair.set(key2, []);
+        byPair.get(key1).push(p);
+        byPair.get(key2).push(p);
     }
-    return median(prices);
+    return byPair;
 }
 
-function isSolUsdcPoolMispriced(pool, solUsdcMedian, factor = 2.0) {
-    if (!solUsdcMedian) return false;
-    const isPair = (pool.mintX === WSOL_MINT && pool.mintY === USDC_MINT) || (pool.mintX === USDC_MINT && pool.mintY === WSOL_MINT);
-    if (!isPair) return false;
-
-    const p = impliedPriceYperX(pool);
-    if (!p) return true;
-
-    const usdcPerSol = (pool.mintX === WSOL_MINT) ? p : new Decimal(1).div(p);
-    if (!usdcPerSol.isFinite() || usdcPerSol.lte(0)) return true;
-
-    const low = solUsdcMedian.div(factor);
-    const high = solUsdcMedian.mul(factor);
-    return usdcPerSol.lt(low) || usdcPerSol.gt(high);
-}
-
-// ---------- main triangular search ----------
 async function findTriangularArbitrage({
     pools,
-    tokenA = WSOL_MINT,
-    tokenC = USDC_MINT,
-    inputAmountAtomic = '1000000000',
-    minProfitPct = 0.1,
-    // Safety: discard obviously broken routes caused by bad reserves/decimals
-    maxProfitPct = 50,
-    maxLossPct = 90,
-    maxPoolsPerLeg = 6,
-    minTvl = 0,
-    minVolume24h = 0,
-    filterMispricedSolUsdc = true,
-    logLevel = 'info', // 'debug'|'info'|'silent'
+    amountInAtomic,
+    tokenA = MINT_SOL,
+    tokenC = MINT_USDC,
+    thresholdPct = 0.1,
+    maxRoutes = 200,
+    sdkFallback = true,
+    logRoutes = false,
+    logLegs = false
 } = {}) {
-    const log = (...args) => { if (logLevel !== 'silent') console.log(...args); };
-    const debug = (...args) => { if (logLevel === 'debug') console.log(...args); };
+    const tokenASet = new Set([tokenA, MINT_WSOL]);
+    const tokenCSet = new Set([tokenC]);
 
-    if (!Array.isArray(pools) || pools.length === 0) return [];
+    const sdkAdapter = sdkFallback ? tryLoadSdkAdapter() : null;
 
-    const eligible = pools.filter(p => Number(p.tvl || 0) >= minTvl && Number(p.volume24h || 0) >= minVolume24h);
+    const usable = (pools || []).filter(p => {
+        if (!p.poolAddress || !p.baseMint || !p.quoteMint) return false;
+        if (!Number.isFinite(Number(p.fee))) p.fee = 0;
+        // Require decimals
+        if (p.baseDecimals === undefined || p.quoteDecimals === undefined) return false;
+        // Reserve requirement: for math types
+        if ((p.type === 'cpmm' || p.type === 'dlmm') && !(p.xReserve && p.yReserve)) return false;
+        // clmm/whirlpool: allowed only if sdk is present
+        if ((p.type === 'clmm' || p.type === 'whirlpool') && !sdkAdapter) return false;
+        return true;
+    });
 
-    const solUsdcMedian = computeSolUsdcMedianPrice(eligible);
-    if (solUsdcMedian) log(`📈 SOL/USDC median price: ~${solUsdcMedian.toFixed(6)} USDC per SOL (from on-file reserves)`);
-    else log('📈 SOL/USDC median price: unavailable (no SOL/USDC pools with reserves)');
+    const byPair = indexPools(usable);
 
-    const poolsFiltered = filterMispricedSolUsdc && solUsdcMedian
-        ? eligible.filter(p => !isSolUsdcPoolMispriced(p, solUsdcMedian, 2.0))
-        : eligible;
-
-    const A = String(tokenA);
-    const C = String(tokenC);
-
-    const poolsByPairKey = new Map();
-    const tokensConnectedToA = new Set();
-    const tokensConnectedToC = new Set();
-
-    function addPair(m1, m2, pool) {
-        const k1 = `${m1}|${m2}`;
-        const arr = poolsByPairKey.get(k1) || [];
-        arr.push(pool);
-        poolsByPairKey.set(k1, arr);
+    // Candidate B tokens are those that connect A<->B and B<->C and C<->A exists.
+    const bCandidates = new Set();
+    for (const p of usable) {
+        const a = p.baseMint, b = p.quoteMint;
+        const aIsA = tokenASet.has(a) || tokenASet.has(b);
+        const cIsC = tokenCSet.has(a) || tokenCSet.has(b);
+        if (aIsA && !cIsC) {
+            const other = tokenASet.has(a) ? b : a;
+            if (!tokenCSet.has(other)) bCandidates.add(other);
+        }
     }
 
-    for (const p of poolsFiltered) {
-        addPair(p.mintX, p.mintY, p);
-        addPair(p.mintY, p.mintX, p);
+    const tokenAList = Array.from(tokenASet);
 
-        if (p.mintX === A) tokensConnectedToA.add(p.mintY);
-        if (p.mintY === A) tokensConnectedToA.add(p.mintX);
+    const routes = [];
+    const dxA = D(amountInAtomic || 0).floor();
+    if (dxA.lte(0)) throw new Error('amountInAtomic must be > 0');
 
-        if (p.mintX === C) tokensConnectedToC.add(p.mintY);
-        if (p.mintY === C) tokensConnectedToC.add(p.mintX);
-    }
-
-    const candidateB = [...tokensConnectedToA].filter(t => tokensConnectedToC.has(t) && t !== A && t !== C);
-
-    log(`Triangular search: pools=${poolsFiltered.length}, poolsA=${tokensConnectedToA.size}, poolsC=${tokensConnectedToC.size}, poolsCA=${(poolsByPairKey.get(`${C}|${A}`) || []).length}`);
-    log(`Candidate B tokens: ${candidateB.length}`);
-
-    const results = [];
-    const inputA = floorAtomic(inputAmountAtomic);
-
-    for (const B of candidateB) {
-        const poolsAB = (poolsByPairKey.get(`${A}|${B}`) || []).slice(0, maxPoolsPerLeg);
-        const poolsBC = (poolsByPairKey.get(`${B}|${C}`) || []).slice(0, maxPoolsPerLeg);
-        const poolsCA = (poolsByPairKey.get(`${C}|${A}`) || []).slice(0, maxPoolsPerLeg);
+    for (const bMint of bCandidates) {
+        // Pools for A<->B, B<->C, C<->A
+        const poolsAB = [];
+        for (const aMint of tokenAList) {
+            const key = `${aMint}-${bMint}`;
+            const arr = byPair.get(key) || [];
+            poolsAB.push(...arr);
+        }
+        const poolsBC = byPair.get(`${bMint}-${tokenC}`) || [];
+        const poolsCA = [];
+        for (const aMint of tokenAList) {
+            const key = `${tokenC}-${aMint}`;
+            const arr = byPair.get(key) || [];
+            poolsCA.push(...arr);
+        }
 
         if (poolsAB.length === 0 || poolsBC.length === 0 || poolsCA.length === 0) continue;
 
-        for (const pAB of poolsAB) {
-            for (const pBC of poolsBC) {
-                for (const pCA of poolsCA) {
-                    const leg1 = await simulateLeg({ pool: pAB, inputMint: A, outputMint: B, dxAtomic: inputA });
+        // Limit combinations to keep search bounded
+        const capAB = poolsAB.slice(0, 30);
+        const capBC = poolsBC.slice(0, 30);
+        const capCA = poolsCA.slice(0, 30);
+
+        for (const p1 of capAB) {
+            for (const p2 of capBC) {
+                for (const p3 of capCA) {
+                    if (routes.length >= maxRoutes) break;
+
+                    // Run legs: A -> B -> C -> A
+                    const aMint = tokenASet.has(p1.baseMint) ? p1.baseMint : (tokenASet.has(p1.quoteMint) ? p1.quoteMint : tokenA);
+                    const leg1 = await simulateLeg({ pool: p1, inputMint: aMint, outputMint: bMint, dxAtomic: dxA, opts: { sdkAdapter } });
                     if (!leg1.ok) continue;
 
-                    const leg2 = await simulateLeg({ pool: pBC, inputMint: B, outputMint: C, dxAtomic: leg1.dyAtomic });
+                    const leg2 = await simulateLeg({ pool: p2, inputMint: bMint, outputMint: tokenC, dxAtomic: leg1.dyAtomic, opts: { sdkAdapter } });
                     if (!leg2.ok) continue;
 
-                    const leg3 = await simulateLeg({ pool: pCA, inputMint: C, outputMint: A, dxAtomic: leg2.dyAtomic });
+                    const leg3 = await simulateLeg({ pool: p3, inputMint: tokenC, outputMint: aMint, dxAtomic: leg2.dyAtomic, opts: { sdkAdapter } });
                     if (!leg3.ok) continue;
 
                     const outA = leg3.dyAtomic;
-                    const profitAtomic = outA.minus(inputA);
-                    const profitPct = profitAtomic.div(inputA).mul(100);
+                    const profitA = outA.minus(dxA);
+                    const profitPct = profitA.div(dxA).mul(100);
 
-                    // Safety filter
-                    if (profitPct.gt(maxProfitPct) || profitPct.lt(new Decimal(0).minus(maxLossPct))) {
-                        debug(`   ⚠️ Skipping suspicious route: profitPct=${profitPct.toFixed(6)}%`);
-                        continue;
+                    // Analytical costs: sum totalCost in token-out per leg, converted to tokenA where possible:
+                    // For simplicity, we estimate costs in tokenA by:
+                    // - Leg1 costs are in B (token-out), convert to A using leg1.midPrice (B per A)
+                    // - Leg2 costs are in C, convert to A using leg3.midPrice (A per C) or inverse of leg3.midPrice? leg3 midPrice is A per C (since input=C out=A), so ok.
+                    // - Leg3 costs already in A.
+                    let costsA = D(0);
+                    try {
+                        // Leg1 cost token-out=B. Convert B->A by dividing by midPrice (B per A)
+                        const c1 = leg1.cost?.totalCostTokenOutHuman ? D(leg1.cost.totalCostTokenOutHuman) : D(0);
+                        if (c1.gt(0) && leg1.midPrice.gt(0)) {
+                            costsA = costsA.plus(c1.div(leg1.midPrice));
+                        }
+                        // Leg2 cost token-out=C. Convert C->A by multiplying by (A per C) == leg3.midPrice (because leg3 input=C out=A)
+                        const c2 = leg2.cost?.totalCostTokenOutHuman ? D(leg2.cost.totalCostTokenOutHuman) : D(0);
+                        if (c2.gt(0) && leg3.midPrice.gt(0)) {
+                            costsA = costsA.plus(c2.mul(leg3.midPrice));
+                        }
+                        // Leg3 cost token-out=A already
+                        const c3 = leg3.cost?.totalCostTokenOutHuman ? D(leg3.cost.totalCostTokenOutHuman) : D(0);
+                        costsA = costsA.plus(c3);
+                    } catch {
+                        costsA = D(0);
                     }
 
-                    const cost3A = leg3.cost?.ok ? toDecimal(leg3.cost.totalCostTokenOutAtomic) : new Decimal(0);
-                    const mid3_AperC = toDecimal(leg3.sim.midPrice || 0);
-                    const mid2_CperB = toDecimal(leg2.sim.midPrice || 0);
-                    const cost2C_atomic = leg2.cost?.ok ? toDecimal(leg2.cost.totalCostTokenOutAtomic) : new Decimal(0);
-                    const cost1B_atomic = leg1.cost?.ok ? toDecimal(leg1.cost.totalCostTokenOutAtomic) : new Decimal(0);
+                    const outAHuman = atomicToHuman(outA, 9); // SOL decimals (assumes tokenA is SOL/WSOL)
+                    const inAHuman = atomicToHuman(dxA, 9);
+                    const netAfterCostsHuman = outAHuman.minus(costsA);
+                    const netAfterCostsPct = netAfterCostsHuman.minus(inAHuman).div(inAHuman).mul(100);
 
-                    const cost2C_h = processor.atomicToHuman(cost2C_atomic, leg2.oriented.quoteDecimals);
-                    const cost1B_h = processor.atomicToHuman(cost1B_atomic, leg1.oriented.quoteDecimals);
+                    const passes = netAfterCostsPct.gte(thresholdPct);
 
-                    const cost2A_h = cost2C_h.mul(mid3_AperC);
-                    const cost1A_h = cost1B_h.mul(mid2_CperB).mul(mid3_AperC);
+                    if (logRoutes) {
+                        console.log(`\nRoute A->B->C->A: ${shortMint(aMint)} -> ${shortMint(bMint)} -> ${shortMint(tokenC)} -> ${shortMint(aMint)}`);
+                        console.log(` Pools: ${p1.poolAddress.slice(0, 8)} -> ${p2.poolAddress.slice(0, 8)} -> ${p3.poolAddress.slice(0, 8)}`);
+                        console.log(` ProfitPct=${profitPct.toFixed(6)}  NetAfterCostsPct=${netAfterCostsPct.toFixed(6)}  passes=${passes}`);
+                    }
+                    if (logLegs) {
+                        console.log(' LEG1', leg1);
+                        console.log(' LEG2', leg2);
+                        console.log(' LEG3', leg3);
+                    }
 
-                    const aDecimals = tokenDecimalsByMint(A, 9);
-                    const costTotalA_atomic = processor.humanToAtomic(cost1A_h.plus(cost2A_h), aDecimals).floor().plus(cost3A);
-
-                    const netAfterCostsAtomic = profitAtomic.minus(costTotalA_atomic);
-                    const netAfterCostsPct = netAfterCostsAtomic.div(inputA).mul(100);
-
-                    const passes = netAfterCostsPct.gte(minProfitPct);
-
-                    results.push({
-                        tokenA: A, tokenB: B, tokenC: C,
-                        pools: [pAB.poolAddress, pBC.poolAddress, pCA.poolAddress],
-                        dexes: [pAB.dex, pBC.dex, pCA.dex],
-                        inputAtomic: inputA.toString(),
+                    routes.push({
+                        tokenA: aMint,
+                        tokenB: bMint,
+                        tokenC,
+                        pools: [p1, p2, p3],
+                        legs: [leg1, leg2, leg3],
+                        inputAtomic: dxA.toString(),
                         outputAtomic: outA.toString(),
-                        profitAtomic: profitAtomic.toString(),
                         profitPct: profitPct.toString(),
-                        netAfterCostsAtomic: netAfterCostsAtomic.toString(),
                         netAfterCostsPct: netAfterCostsPct.toString(),
-                        passes,
-                        // Store leg details for detailed logging
-                        legBreakdowns: {
-                            leg1: {
-                                pool: pAB.poolAddress,
-                                dex: pAB.dex,
-                                inputMint: A,
-                                outputMint: B,
-                                inputAtomic: inputA.toString(),
-                                outputAtomic: leg1.dyAtomic.toString(),
-                                sim: leg1.sim,
-                                cost: leg1.cost
-                            },
-                            leg2: {
-                                pool: pBC.poolAddress,
-                                dex: pBC.dex,
-                                inputMint: B,
-                                outputMint: C,
-                                inputAtomic: leg1.dyAtomic.toString(),
-                                outputAtomic: leg2.dyAtomic.toString(),
-                                sim: leg2.sim,
-                                cost: leg2.cost
-                            },
-                            leg3: {
-                                pool: pCA.poolAddress,
-                                dex: pCA.dex,
-                                inputMint: C,
-                                outputMint: A,
-                                inputAtomic: leg2.dyAtomic.toString(),
-                                outputAtomic: leg3.dyAtomic.toString(),
-                                sim: leg3.sim,
-                                cost: leg3.cost
-                            }
-                        }
+                        passes
                     });
                 }
+                if (routes.length >= maxRoutes) break;
             }
+            if (routes.length >= maxRoutes) break;
         }
+        if (routes.length >= maxRoutes) break;
     }
 
-    results.sort((a, b) => new Decimal(b.netAfterCostsPct).comparedTo(new Decimal(a.netAfterCostsPct)));
-    return results;
+    // sort by netAfterCostsPct desc
+    routes.sort((a, b) => D(b.netAfterCostsPct).cmp(D(a.netAfterCostsPct)));
+    return routes;
 }
 
-// ---------- Enhanced Logging ----------
-function logTopResultsWithBreakdown(topResults, tokenA) {
-    console.log('\n╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-    console.log('║                                            📊 TOP 5 ARBITRAGE ROUTES WITH DETAILED BREAKDOWN                                            ║');
-    console.log('╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝\n');
-
-    topResults.forEach((result, idx) => {
-        const aDec = tokenDecimalsByMint(tokenA, 9);
-        const inputHuman = processor.atomicToHuman(result.inputAtomic, aDec);
-        const outputHuman = processor.atomicToHuman(result.outputAtomic, aDec);
-        const netAfterCostsPct = new Decimal(result.netAfterCostsPct);
-        const profitPct = new Decimal(result.profitPct);
-
-        console.log(`╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮`);
-        console.log(`│                                              ROUTE ${idx + 1}                                                               │`);
-        console.log(`├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤`);
-        console.log(`│ 🎯 NET PROFIT AFTER COSTS: ${netAfterCostsPct.toFixed(6)}% (${result.passes ? '✅ PASSES' : '❌ FAILS'} threshold)          │`);
-        console.log(`│ 📈 RAW PROFIT: ${profitPct.toFixed(6)}%                                                                     │`);
-        console.log(`│ 💰 Input: ${inputHuman.toFixed(6)} → Output: ${outputHuman.toFixed(6)} ${shortMint(tokenA)}                                     │`);
-        console.log(`│ 🏪 DEXes: ${result.dexes.join(' → ')}                                                                    │`);
-        console.log(`├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤`);
-
-        // Show each leg breakdown
-        if (result.legBreakdowns) {
-            ['leg1', 'leg2', 'leg3'].forEach((legKey, legIdx) => {
-                const leg = result.legBreakdowns[legKey];
-                if (leg) {
-                    console.log(`│ LEG ${legIdx + 1}: ${shortMint(leg.inputMint)} → ${shortMint(leg.outputMint)} (${leg.dex})                                                          │`);
-                    console.log(`│   Pool: ${shortMint(leg.pool)}                                                                          │`);
-                    console.log(`│   Input:  ${processor.atomicToHuman(leg.inputAtomic, tokenDecimalsByMint(leg.inputMint, 9)).toFixed(6)}                              │`);
-                    console.log(`│   Output: ${processor.atomicToHuman(leg.outputAtomic, tokenDecimalsByMint(leg.outputMint, 9)).toFixed(6)}                              │`);
-
-                    if (leg.sim) {
-                        console.log(`│   Mid Price: ${toDecimal(leg.sim.midPrice || 0).toFixed(6)}                                                     │`);
-                        console.log(`│   Exec Price: ${toDecimal(leg.sim.executionPrice || 0).toFixed(6)}                                              │`);
-                        console.log(`│   Price Impact: ${toDecimal(leg.sim.priceImpact || 0).mul(100).toFixed(4)}%                                    │`);
-                        console.log(`│   Fee Paid: ${toDecimal(leg.sim.feePaid || 0).toFixed(8)}                                                       │`);
-                    }
-
-                    if (leg.cost && leg.cost.ok && leg.cost.breakdown) {
-                        const bd = leg.cost.breakdown;
-                        console.log(`│   💸 COST BREAKDOWN:                                                                                │`);
-                        console.log(`│     - Fee Cost: ${bd.feeCostOutHuman || '0'}                                                        │`);
-                        console.log(`│     - Slippage Cost: ${bd.slippageCostOutHuman || '0'}                                             │`);
-                        console.log(`│     - Total Cost: ${bd.totalCostOutHuman || '0'}                                                   │`);
-                        console.log(`│     - Fee Rate: ${new Decimal(bd.feeRate || 0).mul(100).toFixed(4)}%                              │`);
-                        console.log(`│     - Price Impact: ${bd.priceImpactPct || '0'}%                                                   │`);
-                    }
-
-                    if (legIdx < 2) {
-                        console.log(`│                                                                                                         │`);
-                    }
-                }
-            });
-        }
-
-        console.log(`╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯\n`);
-    });
-
-    console.log('💡 Note: Costs are analytical estimates for ranking. Actual propagation uses processSwap output (fee + slippage included).\n');
-}
-
-// Convenience: load + run
-async function runFromFile({
-    poolsFile = path.join('output', 'FINAL_reserves_pool_array.json'),
-    tokenA = WSOL_MINT,
-    tokenC = USDC_MINT,
-    inputAmountAtomic = '1000000000',
-    minProfitPct = 0.1,
-    logLevel = 'info',
-    opts = {},
+// -------------------------
+// Pipeline: load + enrich + run
+// -------------------------
+async function loadAndEnrichPools({
+    poolFile,
+    rpcEndpoints,
+    sdkFallback = false,
+    log = false
 } = {}) {
-    const { pools, droppedMissingReserves, absPath } = loadPoolsFromJsonFile(poolsFile, opts);
-    console.log(`📦 Loading pools from: ${absPath}`);
-    console.log(`✅ Loaded pools: ${pools.length} with numeric reserves (dropped missing reserves: ${droppedMissingReserves})`);
-    console.log('🔍 Running triangular arbitrage detection...');
+    if (!poolFile) throw new Error('poolFile required');
+    const { pools, abs } = loadPoolsFromFile(poolFile);
 
-    const results = await findTriangularArbitrage({
-        pools,
-        tokenA,
-        tokenC,
-        inputAmountAtomic,
-        minProfitPct,
-        logLevel,
-        ...opts,
+    const fetcher = new UnifiedReservesFetcher({
+        rpcEndpoints,
+        log
     });
 
-    console.log(`🎯 Found ${results.length} triangular routes`);
-    const top = results.slice(0, 5);
+    // optional sdk fallback passed into fetcher too (for rare cases)
+    const sdkAdapter = sdkFallback ? tryLoadSdkAdapter() : null;
+    const sdkFallbackFn = sdkAdapter
+        ? async (pool) => {
+            // if sdk can return vault-like reserves, it may implement fetchReserves
+            if (typeof sdkAdapter.fetchReserves === 'function') return await sdkAdapter.fetchReserves(pool);
+            return null;
+        }
+        : null;
 
-    // Show detailed breakdown for top 5 results
-    logTopResultsWithBreakdown(top, tokenA);
+    const enriched = await fetcher.enrichPools(pools, { sdkFallback: sdkFallbackFn });
 
-    return results;
+    // Filter "math-ready" pools
+    const ready = enriched.filter(p => {
+        if (!p.poolAddress) return false;
+        if (p.type === 'cpmm' || p.type === 'dlmm') return p.xReserve && p.yReserve && D(p.xReserve).gt(0) && D(p.yReserve).gt(0);
+        if (p.type === 'clmm' || p.type === 'whirlpool') return true; // SDK path later
+        return false;
+    });
+
+    return {
+        file: abs, pools: ready, stats: {
+            total: pools.length,
+            ready: ready.length,
+            vault: ready.filter(p => p._reserveSource === 'vault').length,
+            cache: ready.filter(p => p._reserveSource === 'cache_amount').length
+        }
+    };
 }
 
 module.exports = {
-    WSOL_MINT,
-    USDC_MINT,
-    loadPoolsFromJsonFile,
-    findTriangularArbitrage,
-    runFromFile,
+    MINT_SOL,
+    MINT_USDC,
+    loadPoolsFromFile,
+    loadAndEnrichPools,
+    findTriangularArbitrage
 };

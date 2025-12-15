@@ -1,237 +1,215 @@
-// processorNewEngine.js
-// Purpose: deterministic swap math with a strict contract for tri-arb simulation.
-// Contract:
-// - processSwap({ pool, dxAtomic, opts }) expects:
-//   pool = { type, xReserve, yReserve, baseDecimals, quoteDecimals, fee }
-//     - xReserve/yReserve: ATOMIC integer-like (string|number|bigint)
-//     - baseDecimals: decimals of the INPUT token
-//     - quoteDecimals: decimals of the OUTPUT token
-//   dxAtomic: ATOMIC amount of INPUT token (string|number|bigint)
-// - Returns dy in HUMAN units (Decimal), plus midPrice/executionPrice, feePaidHuman, etc.
-// - computeTotalCostTokenOut(...) is analytical ONLY. It must never be applied again to dy/dx propagation.
+'use strict';
+
+/**
+ * processorNewEngine.js (FULL REPLACEMENT)
+ *
+ * CONTRACT (do not deviate):
+ * - All inputs into processSwap are ATOMIC integers (string/number/Decimal-ish).
+ * - processSwap returns:
+ *    dyHuman: Decimal-like (string) amount of token-out in HUMAN units (already net-of-fee),
+ *    feePaidHuman: human units of token-in,
+ *    midPrice: token-out per token-in (human/human),
+ *    executionPrice: token-out per token-in (human/human) based on dyHuman/dxHuman,
+ *    priceImpactPct: percent as string (0..100),
+ *    meta: { type, isApprox, notes }
+ *
+ * - computeTotalCostTokenOut is STRICTLY ANALYTICAL:
+ *    It DOES NOT change dy.
+ *    It computes "cost vs mid" in TOKEN-OUT units:
+ *      midOut = dxHuman * midPrice
+ *      totalCost = max(0, midOut - dyHuman)
+ *      feeCost = dxHuman * feeRate * midPrice
+ *      slippageCost = max(0, totalCost - feeCost)
+ *    This avoids double counting (since dyHuman is already fee-adjusted).
+ */
 
 const Decimal = require('decimal.js');
 
-function toDecimal(v) {
-    try {
-        if (v === null || v === undefined) return new Decimal(0);
-        if (typeof v === 'bigint') return new Decimal(v.toString());
-        return new Decimal(v);
-    } catch {
-        return new Decimal(0);
-    }
+// -------------------------
+// Decimal helpers
+// -------------------------
+function D(x) {
+    try { return new Decimal(x); } catch { return new Decimal(0); }
 }
-
-function pow10(decimals) {
-    return new Decimal(10).pow(Number(decimals || 0));
+function pow10(n) { return Decimal.pow(10, Number(n || 0)); }
+function atomicToHuman(dxAtomic, decimals) {
+    return D(dxAtomic).div(pow10(decimals));
 }
-
-function atomicToHuman(atomic, decimals) {
-    return toDecimal(atomic).div(pow10(decimals));
+function humanToAtomic(dxHuman, decimals) {
+    // returns integer Decimal (floor)
+    return D(dxHuman).mul(pow10(decimals)).floor();
 }
+function pct(x) { return D(x).mul(100); }
 
-function humanToAtomic(human, decimals) {
-    return toDecimal(human).mul(pow10(decimals));
-}
+// -------------------------
+// Core CPMM simulator (x*y=k) using HUMAN units for math
+// -------------------------
+function simulateCPMMHuman({ xResHuman, yResHuman, dxHuman, feeRate }) {
+    const x = D(xResHuman);
+    const y = D(yResHuman);
+    const dx = D(dxHuman);
 
-function isFinitePositive(d) {
-    try { return d && d.isFinite() && d.gt(0); } catch { return false; }
-}
-
-function normalizeFeeRate(feeRate) {
-    const f = toDecimal(feeRate);
-    if (!f.isFinite()) return new Decimal(0);
-    if (f.lt(0)) return new Decimal(0);
-    // Heuristic: if fee > 1, treat as percent (e.g., 20 => 0.2)
-    if (f.gt(1)) return f.div(100);
-    return f;
-}
-
-// --- CPMM (constant product) simulator on HUMAN reserves ---
-function simulateCPMMHuman({ x, y, dx, feeRate }) {
-    const fee = normalizeFeeRate(feeRate);
-    if (!isFinitePositive(x) || !isFinitePositive(y) || !isFinitePositive(dx)) {
-        throw new Error('simulateCPMMHuman: invalid reserves or dx');
+    if (x.lte(0) || y.lte(0) || dx.lte(0)) {
+        return { dyHuman: D(0), feePaidHuman: D(0), midPrice: D(0), executionPrice: D(0), priceImpactPct: D(0), meta: { type: 'cpmm', isApprox: false } };
     }
 
-    const midPrice = y.div(x); // tokenOut per tokenIn
+    const fee = D(feeRate || 0);
+    const dxAfterFee = dx.mul(D(1).minus(fee));
+    // constant product: dy = y - (x*y)/(x+dxAfterFee)
+    const k = x.mul(y);
+    const newX = x.plus(dxAfterFee);
+    const newY = k.div(newX);
+    const dy = y.minus(newY);
 
-    const feePaid = dx.mul(fee);             // input token, human
-    const dxAfterFee = dx.minus(feePaid);    // input token, human
-    if (!isFinitePositive(dxAfterFee)) {
-        return { dy: new Decimal(0), midPrice, executionPrice: new Decimal(0), executionPriceNoFee: new Decimal(0), priceImpactPct: new Decimal(0), feePaid };
-    }
+    const midPrice = y.div(x); // token-out per token-in
+    const executionPrice = dy.div(dx); // includes fee effect in dy
+    const feePaidHuman = dx.mul(fee); // fee in token-in
 
-    // dy = y * dxAfterFee / (x + dxAfterFee)
-    const dy = y.mul(dxAfterFee).div(x.plus(dxAfterFee));
-
-    // Prices:
-    const executionPrice = dy.div(dx); // includes fee effect (lower dy)
-    const executionPriceNoFee = dy.div(dxAfterFee); // isolates slippage only
-
-    const priceImpactPct = midPrice.gt(0)
-        ? midPrice.minus(executionPriceNoFee).div(midPrice).abs().mul(100)
-        : new Decimal(0);
-
-    return { dy, midPrice, executionPrice, executionPriceNoFee, priceImpactPct, feePaid };
-}
-
-function detectType(pool) {
-    const t = (pool?.type || pool?.poolType || '').toString().toLowerCase();
-    if (t.includes('clmm') || t.includes('whirlpool') || t.includes('concentrated')) return 'clmm';
-    if (t.includes('dlmm') || t.includes('bin')) return 'dlmm';
-    if (t.includes('cpmm') || t.includes('amm') || t.includes('constant')) return 'cpmm';
-    return 'cpmm';
-}
-
-/**
- * processSwap
- * - dxAtomic is ATOMIC input
- * - Returns dy in HUMAN output
- */
-async function processSwap({ pool = {}, dxAtomic = 0, opts = {} } = {}) {
-    if (!pool || typeof pool !== 'object') throw new Error('processSwap: invalid pool');
-    const type = detectType(pool);
-
-    const baseDecimals = Number(pool.baseDecimals ?? pool.baseToken?.decimals ?? 0);
-    const quoteDecimals = Number(pool.quoteDecimals ?? pool.quoteToken?.decimals ?? 0);
-    const feeRate = normalizeFeeRate(opts.feeRate ?? pool.fee ?? pool.feeRate ?? pool.feePct ?? 0);
-
-    const xResAtomic = toDecimal(pool.xReserve ?? 0);
-    const yResAtomic = toDecimal(pool.yReserve ?? 0);
-    const dxA = toDecimal(dxAtomic ?? 0);
-
-    if (!isFinitePositive(xResAtomic) || !isFinitePositive(yResAtomic)) {
-        throw new Error(`processSwap: missing reserves: x=${pool.xReserve}, y=${pool.yReserve}`);
-    }
-    if (!isFinitePositive(dxA)) {
-        throw new Error('processSwap: dxAtomic must be > 0');
-    }
-
-    // Normalize to HUMAN units for math
-    const xHuman = atomicToHuman(xResAtomic, baseDecimals);
-    const yHuman = atomicToHuman(yResAtomic, quoteDecimals);
-    const dxHuman = atomicToHuman(dxA, baseDecimals);
-
-    // NOTE:
-    // For CLMM/DLMM, accurate simulation needs extra state (ticks/bins).
-    // Here we use CPMM approximation on aggregated reserves unless you attach SDK-state elsewhere.
-    const sim = simulateCPMMHuman({ x: xHuman, y: yHuman, dx: dxHuman, feeRate });
+    const priceImpact = midPrice.gt(0) ? midPrice.minus(executionPrice).abs().div(midPrice) : D(0);
 
     return {
-        type,
-        dxHuman,
-        dy: sim.dy, // HUMAN output
-        feeRate: feeRate,
-        feePaid: sim.feePaid, // HUMAN input token
-        midPrice: sim.midPrice,
-        executionPrice: sim.executionPrice,
-        executionPriceNoFee: sim.executionPriceNoFee,
-        priceImpactPct: sim.priceImpactPct,
-        // convenience atomic
-        dyAtomic: humanToAtomic(sim.dy, quoteDecimals).floor(),
-        dxAtomic: dxA.floor(),
-        baseDecimals,
-        quoteDecimals,
+        dyHuman: dy,
+        feePaidHuman,
+        midPrice,
+        executionPrice,
+        priceImpactPct: pct(priceImpact),
+        meta: { type: 'cpmm', isApprox: false }
     };
 }
 
-/**
- * computeTotalCostTokenOut (STRICTLY ANALYTICAL)
- * - Does NOT mutate or "deduct" anything.
- * - Expresses (fee cost + slippage cost) in TOKEN-OUT units.
- *
- * totalCostOut = feeCostOut + slippageCostOut
- * feeCostOut = midPrice * feePaidHuman
- * slippageCostOut = midPrice*(dxHuman-feePaidHuman) - actualOut
- */
-async function computeTotalCostTokenOut(pool, amountAtomic, opts = {}) {
-    const baseDecimals = Number(pool.baseDecimals ?? pool.baseToken?.decimals ?? 0);
-    const quoteDecimals = Number(pool.quoteDecimals ?? pool.quoteToken?.decimals ?? 0);
-    const feeRate = normalizeFeeRate(opts.feeRate ?? pool.fee ?? pool.feeRate ?? pool.feePct ?? 0);
+// -------------------------
+// processSwap (atomic input) -> dyHuman
+// Supports: cpmm/dlmm (CPMM fallback), clmm (requires external SDK; we mark unsupported here)
+// -------------------------
+async function processSwap({ pool = {}, dx = 0, opts = {} } = {}) {
+    if (!pool || typeof pool !== 'object') throw new Error('processSwap: pool missing');
+    const typeRaw = (pool.type || pool.poolType || 'cpmm').toString().toLowerCase();
+    const feeRate = opts.feeRate !== undefined ? opts.feeRate : (pool.fee ?? pool.feePct ?? 0);
+    const isReverse = !!opts.isReverse;
 
-    const xResAtomic = toDecimal(pool.xReserve ?? 0);
-    const yResAtomic = toDecimal(pool.yReserve ?? 0);
-    const dxA = toDecimal(amountAtomic ?? 0);
+    const baseDecimals = pool.baseDecimals ?? pool.baseToken?.decimals ?? 0;
+    const quoteDecimals = pool.quoteDecimals ?? pool.quoteToken?.decimals ?? 0;
 
-    if (!isFinitePositive(xResAtomic) || !isFinitePositive(yResAtomic) || !isFinitePositive(dxA)) {
-        return {
-            ok: false,
-            totalCostTokenOutHuman: new Decimal(0),
-            totalCostTokenOutAtomic: new Decimal(0),
-            breakdown: { reason: 'missing reserves or dx', baseDecimals, quoteDecimals }
-        };
+    // We only do reserve-based simulation here.
+    // For CLMM/Whirlpool, you should use SDK fallback at the engine layer.
+    if (typeRaw === 'clmm' || typeRaw === 'whirlpool') {
+        throw new Error('processSwap: CLMM/Whirlpool requires SDK fallback (not supported by reserve-only math)');
     }
 
-    const xHuman = atomicToHuman(xResAtomic, baseDecimals);
-    const yHuman = atomicToHuman(yResAtomic, quoteDecimals);
-    const dxHuman = atomicToHuman(dxA, baseDecimals);
+    // Determine which side is token-in and token-out in THIS CALL.
+    // Convention: if isReverse=false => base -> quote. isReverse=true => quote -> base.
+    const inDecimals = isReverse ? quoteDecimals : baseDecimals;
+    const outDecimals = isReverse ? baseDecimals : quoteDecimals;
 
-    const midPrice = yHuman.div(xHuman);
-    const feePaidHuman = dxHuman.mul(feeRate);
-    const dxAfterFee = dxHuman.minus(feePaidHuman);
-
-    if (!isFinitePositive(dxAfterFee)) {
-        const feeCostOut = feePaidHuman.mul(midPrice);
-        const totalCostOut = feeCostOut;
-        return {
-            ok: true,
-            totalCostTokenOutHuman: totalCostOut,
-            totalCostTokenOutAtomic: humanToAtomic(totalCostOut, quoteDecimals).floor(),
-            breakdown: {
-                baseDecimals,
-                quoteDecimals,
-                dxAtomic: dxA.floor().toString(),
-                dxHuman: dxHuman.toString(),
-                midPrice: midPrice.toString(),
-                feeRate: feeRate.toString(),
-                feePaidHuman: feePaidHuman.toString(),
-                feeCostOutHuman: feeCostOut.toString(),
-                slippageCostOutHuman: '0',
-                totalCostOutHuman: totalCostOut.toString(),
-                executionPriceNoFee: '0',
-                executionPrice: '0',
-                priceImpactPct: '0',
-            }
-        };
+    // reserves are stored as ATOMIC amounts for base/quote
+    const xReserveAtomic = D(pool.xReserve ?? pool.liquidityX ?? 0);
+    const yReserveAtomic = D(pool.yReserve ?? pool.liquidityY ?? 0);
+    if (xReserveAtomic.lte(0) || yReserveAtomic.lte(0)) {
+        throw new Error(`processSwap: Missing pool reserves: x=${pool.xReserve}, y=${pool.yReserve}`);
     }
 
-    const sim = simulateCPMMHuman({ x: xHuman, y: yHuman, dx: dxHuman, feeRate });
-    const actualOut = sim.dy; // HUMAN token-out
+    // Convert reserves to HUMAN for math
+    const xResHuman = atomicToHuman(xReserveAtomic, baseDecimals);
+    const yResHuman = atomicToHuman(yReserveAtomic, quoteDecimals);
 
-    const feeCostOut = feePaidHuman.mul(midPrice);
-    const idealOutAfterFee = dxAfterFee.mul(midPrice);
-    let slippageCostOut = idealOutAfterFee.minus(actualOut);
-    if (!slippageCostOut.isFinite() || slippageCostOut.lt(0)) slippageCostOut = new Decimal(0);
+    // Convert input dx (atomic) to HUMAN in token-in units
+    const dxHuman = atomicToHuman(dx, inDecimals);
 
-    const totalCostOut = feeCostOut.plus(slippageCostOut);
+    // If reverse, swap (x,y) in math so token-in corresponds to x side.
+    let sim;
+    if (isReverse) {
+        // token-in is quote, token-out is base
+        sim = simulateCPMMHuman({
+            xResHuman: yResHuman,  // treat quote reserve as x
+            yResHuman: xResHuman,  // treat base reserve as y
+            dxHuman,
+            feeRate
+        });
+    } else {
+        sim = simulateCPMMHuman({
+            xResHuman,
+            yResHuman,
+            dxHuman,
+            feeRate
+        });
+    }
+
+    // Normalize to return dyHuman in token-out units (human)
+    // And embed decimals so callers can convert to atomic.
+    return {
+        dyHuman: sim.dyHuman,
+        feePaidHuman: sim.feePaidHuman,
+        midPrice: sim.midPrice,
+        executionPrice: sim.executionPrice,
+        priceImpactPct: sim.priceImpactPct,
+        inDecimals,
+        outDecimals,
+        meta: sim.meta
+    };
+}
+
+// -------------------------
+// computeTotalCostTokenOut (analytical) for ranking
+// -------------------------
+async function computeTotalCostTokenOut(pool, amountInAtomic, opts = {}) {
+    const isReverse = !!opts.isReverse;
+
+    const baseDecimals = pool.baseDecimals ?? pool.baseToken?.decimals ?? 0;
+    const quoteDecimals = pool.quoteDecimals ?? pool.quoteToken?.decimals ?? 0;
+    const inDecimals = isReverse ? quoteDecimals : baseDecimals;
+    const outDecimals = isReverse ? baseDecimals : quoteDecimals;
+
+    const dxAtomic = D(amountInAtomic || 0);
+    const dxHuman = atomicToHuman(dxAtomic, inDecimals);
+
+    const feeRate = D(opts.feeRate ?? pool.fee ?? pool.feePct ?? 0);
+
+    // Try to use the same simulator as production swaps for consistency.
+    const sim = await processSwap({ pool, dx: dxAtomic.toString(), opts: { feeRate: feeRate.toNumber(), isReverse } });
+
+    const dyHuman = D(sim.dyHuman || 0);
+    const midPrice = D(sim.midPrice || 0);
+
+    // midOut and costs in TOKEN-OUT HUMAN units
+    const midOut = dxHuman.mul(midPrice);
+    const totalCost = Decimal.max(0, midOut.minus(dyHuman)); // includes fee+slippage effect vs mid
+    const feeCost = dxHuman.mul(feeRate).mul(midPrice);
+    const slippageCost = Decimal.max(0, totalCost.minus(feeCost));
+
+    const priceImpactPct = midOut.gt(0) ? slippageCost.div(midOut).mul(100) : D(0);
+
+    const totalCostAtomic = humanToAtomic(totalCost, outDecimals);
+    const feeCostAtomic = humanToAtomic(feeCost, outDecimals);
+    const slippageCostAtomic = humanToAtomic(slippageCost, outDecimals);
 
     return {
-        ok: true,
-        totalCostTokenOutHuman: totalCostOut,
-        totalCostTokenOutAtomic: humanToAtomic(totalCostOut, quoteDecimals).floor(),
+        totalCostTokenOutHuman: totalCost,
+        totalCostTokenOutAtomic: totalCostAtomic,
         breakdown: {
-            baseDecimals,
-            quoteDecimals,
-            dxAtomic: dxA.floor().toString(),
-            dxHuman: dxHuman.toString(),
-            midPrice: sim.midPrice.toString(),
-            executionPriceNoFee: sim.executionPriceNoFee.toString(),
-            executionPrice: sim.executionPrice.toString(),
-            priceImpactPct: sim.priceImpactPct.toString(),
+            inputAmountAtomic: dxAtomic.toString(),
+            inputAmountHuman: dxHuman.toString(),
+            inDecimals,
+            outDecimals,
+            dyHuman: dyHuman.toString(),
+            midPrice: midPrice.toString(),
+            midOutHuman: midOut.toString(),
             feeRate: feeRate.toString(),
-            feePaidHuman: sim.feePaid.toString(),
-            feeCostOutHuman: feeCostOut.toString(),
-            slippageCostOutHuman: slippageCostOut.toString(),
-            totalCostOutHuman: totalCostOut.toString(),
+            feeCostTokenOutHuman: feeCost.toString(),
+            slippageCostTokenOutHuman: slippageCost.toString(),
+            totalCostTokenOutHuman: totalCost.toString(),
+            feeCostTokenOutAtomic: feeCostAtomic.toString(),
+            slippageCostTokenOutAtomic: slippageCostAtomic.toString(),
+            totalCostTokenOutAtomic: totalCostAtomic.toString(),
+            priceImpactPct: priceImpactPct.toString()
         }
     };
 }
 
 module.exports = {
-    toDecimal,
+    Decimal,
+    D,
     atomicToHuman,
     humanToAtomic,
     processSwap,
-    computeTotalCostTokenOut,
+    computeTotalCostTokenOut
 };
