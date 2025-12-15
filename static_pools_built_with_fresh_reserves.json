@@ -1,0 +1,1257 @@
+[
+  {
+    "poolAddress": "9DiruRpjnAnzhn6ts5HGLouHtJrT1JGsPbXNYCrFz2ad",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P",
+      "symbol": "MELANIA",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6
+    },
+    "baseMint": "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P",
+    "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.00015,
+    "tvl": {
+      "tvl": 15358895.94176956
+    },
+    "volume24h": 89388.04458333245,
+    "_original": {
+      "id": "9DiruRpjnAnzhn6ts5HGLouHtJrT1JGsPbXNYCrFz2ad",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P",
+        "symbol": "MELANIA",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 15358895.94176956
+      },
+      "fee": 0.00015,
+      "volume24h": 89388.04458333245,
+      "raw": {
+        "address": "9DiruRpjnAnzhn6ts5HGLouHtJrT1JGsPbXNYCrFz2ad",
+        "name": "MELANIA-USDC",
+        "mint_x": "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P",
+        "mint_y": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "reserve_x": "7dY6amxDBCSG2fEnTAJiyXbe4z19kQSRk9DM5wrYzsuN",
+        "reserve_y": "4FWoCg5Ukne58ytBe9Ki578USggRfcj8rqpLW78s8jDV",
+        "reserve_x_amount": 97769998697180,
+        "reserve_y_amount": 2391158149769,
+        "bin_step": 100,
+        "base_fee_percentage": "1.5",
+        "max_fee_percentage": "1.5",
+        "protocol_fee_percentage": "20",
+        "liquidity": "15358895.94176956",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 1073.0481217885967,
+        "today_fees": 0,
+        "trade_volume_24h": 89388.04458333245,
+        "cumulative_trade_volume": "3269529398.0900",
+        "cumulative_fee_volume": "39234666.8200",
+        "apr": 0.00698649255686647,
+        "apy": 2.582770835936543,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 466.124026487042,
+          "hour_24": 1073.0481217885967
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 0.0030348797742641514,
+          "hour_24": 0.00698649255686647
+        },
+        "volume": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 38834.66242401179,
+          "hour_24": 89388.04458333245
+        },
+        "tags": [
+          "blp",
+          "lfg"
+        ],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "97769998697180",
+      "yReserve": "2391158149769",
+      "realPriceFromReserves": "24.456972298578629948",
+      "priceCalculation": {
+        "xReserveRaw": "97769998697180",
+        "yReserveRaw": "2391158149769",
+        "xReserveAdjusted": "97769.99869718",
+        "yReserveAdjusted": "2391158.149769",
+        "realPrice": "24.456972298578629948",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "101281245444968",
+    "liquidityY": "2225386672466",
+    "binStep": 100,
+    "_vaultA": "7dY6amxDBCSG2fEnTAJiyXbe4z19kQSRk9DM5wrYzsuN",
+    "_vaultB": "4FWoCg5Ukne58ytBe9Ki578USggRfcj8rqpLW78s8jDV",
+    "_vaultMintA": "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P",
+    "_vaultMintB": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "xReserve": "101281245444968",
+    "yReserve": "2225386672466",
+    "midPrice": 21.972347029195866,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337342
+  },
+  {
+    "poolAddress": "3CVr2Sjmbe8ZoA6du97SmccV7G96Ug3yAvuwZH9r5RFf",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "uniBKsEV37qLRFZD7v3Z9drX6voyiCM8WcaePqeSSLc",
+      "symbol": "uniBTC",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "CtzPWv73Sn1dMGVU3ZtLv9yWSyUAanBni19YWDaznnkn",
+      "symbol": "xBTC",
+      "decimals": 6
+    },
+    "baseMint": "uniBKsEV37qLRFZD7v3Z9drX6voyiCM8WcaePqeSSLc",
+    "quoteMint": "CtzPWv73Sn1dMGVU3ZtLv9yWSyUAanBni19YWDaznnkn",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.000001,
+    "tvl": {
+      "tvl": 2073563.3142042703
+    },
+    "volume24h": 0,
+    "_original": {
+      "id": "3CVr2Sjmbe8ZoA6du97SmccV7G96Ug3yAvuwZH9r5RFf",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "uniBKsEV37qLRFZD7v3Z9drX6voyiCM8WcaePqeSSLc",
+        "symbol": "uniBTC",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "CtzPWv73Sn1dMGVU3ZtLv9yWSyUAanBni19YWDaznnkn",
+        "symbol": "xBTC",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 2073563.3142042703
+      },
+      "fee": 0.000001,
+      "volume24h": 0,
+      "raw": {
+        "address": "3CVr2Sjmbe8ZoA6du97SmccV7G96Ug3yAvuwZH9r5RFf",
+        "name": "uniBTC-xBTC",
+        "mint_x": "uniBKsEV37qLRFZD7v3Z9drX6voyiCM8WcaePqeSSLc",
+        "mint_y": "CtzPWv73Sn1dMGVU3ZtLv9yWSyUAanBni19YWDaznnkn",
+        "reserve_x": "FPDDZgJX9zCWfiRk9Mqct3nrYwT9WCT4ukpJgqKZKjkq",
+        "reserve_y": "9d4DnD8VgDPSGjhT6i3JF1RyiRTk8NgToBHkZmzTr7EY",
+        "reserve_x_amount": 2250231362,
+        "reserve_y_amount": 163719694,
+        "bin_step": 1,
+        "base_fee_percentage": "0.01",
+        "max_fee_percentage": "0.0300001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "2073563.3142042703",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 0,
+        "today_fees": 0,
+        "trade_volume_24h": 0,
+        "cumulative_trade_volume": "313833.5900",
+        "cumulative_fee_volume": "42.0100",
+        "apr": 0,
+        "apy": 0,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 0,
+          "hour_24": 0
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 0,
+          "hour_24": 0
+        },
+        "volume": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 0,
+          "hour_24": 0
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "2250231362",
+      "yReserve": "163719694",
+      "realPriceFromReserves": "72.756827037770172186",
+      "priceCalculation": {
+        "xReserveRaw": "2250231362",
+        "yReserveRaw": "163719694",
+        "xReserveAdjusted": "2.250231362",
+        "yReserveAdjusted": "163.719694",
+        "realPrice": "72.756827037770172186",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "2251827622",
+    "liquidityY": "162130085",
+    "binStep": 1,
+    "_vaultA": "FPDDZgJX9zCWfiRk9Mqct3nrYwT9WCT4ukpJgqKZKjkq",
+    "_vaultB": "9d4DnD8VgDPSGjhT6i3JF1RyiRTk8NgToBHkZmzTr7EY",
+    "_vaultMintA": "uniBKsEV37qLRFZD7v3Z9drX6voyiCM8WcaePqeSSLc",
+    "_vaultMintB": "CtzPWv73Sn1dMGVU3ZtLv9yWSyUAanBni19YWDaznnkn",
+    "xReserve": "2251827622",
+    "yReserve": "162130085",
+    "midPrice": 71.99933219399864,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337345
+  },
+  {
+    "poolAddress": "5hbf9JP8k5zdrZp9pokPypFQoBse5mGCmW6nqodurGcd",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+      "symbol": "MET",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6
+    },
+    "baseMint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+    "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.00002,
+    "tvl": {
+      "tvl": 2343182.581012658
+    },
+    "volume24h": 3001375.608075625,
+    "_original": {
+      "id": "5hbf9JP8k5zdrZp9pokPypFQoBse5mGCmW6nqodurGcd",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+        "symbol": "MET",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 2343182.581012658
+      },
+      "fee": 0.00002,
+      "volume24h": 3001375.608075625,
+      "raw": {
+        "address": "5hbf9JP8k5zdrZp9pokPypFQoBse5mGCmW6nqodurGcd",
+        "name": "MET-USDC",
+        "mint_x": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+        "mint_y": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "reserve_x": "GNGNUN9ibF6Dd77hHNGPReyDstK6yLZBxpzX2hhS65yf",
+        "reserve_y": "EexHXzasDJxTJLdgmny8mbhAN64TEnqCSkBovWpZ9mJr",
+        "reserve_x_amount": 6659924678093,
+        "reserve_y_amount": 189844127935,
+        "bin_step": 20,
+        "base_fee_percentage": "0.2",
+        "max_fee_percentage": "1.1800001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "2343182.581012658",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 5806.122706652956,
+        "today_fees": 134.95546918156134,
+        "trade_volume_24h": 3001375.608075625,
+        "cumulative_trade_volume": "402143588.3500",
+        "cumulative_fee_volume": "829483.1100",
+        "apr": 0.24778789129371698,
+        "apy": 146.7750783962621,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 49.03141150379838,
+          "hour_1": 98.01907516507441,
+          "hour_2": 165.39168885436482,
+          "hour_4": 364.94176183825397,
+          "hour_12": 2424.5630133689165,
+          "hour_24": 5806.122706652956
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0.002092513485765517,
+          "hour_1": 0.004183159944911904,
+          "hour_2": 0.007058420892787925,
+          "hour_4": 0.015574619101194254,
+          "hour_12": 0.10347307260713283,
+          "hour_24": 0.24778789129371698
+        },
+        "volume": {
+          "min_30": 25655.095141224676,
+          "hour_1": 50970.85308121415,
+          "hour_2": 86229.3539400119,
+          "hour_4": 190847.51704965835,
+          "hour_12": 1264306.069502312,
+          "hour_24": 3001375.608075625
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "6659924678093",
+      "yReserve": "189844127935",
+      "realPriceFromReserves": "28.505446699640436002",
+      "priceCalculation": {
+        "xReserveRaw": "6659924678093",
+        "yReserveRaw": "189844127935",
+        "xReserveAdjusted": "6659.924678093",
+        "yReserveAdjusted": "189844.127935",
+        "realPrice": "28.505446699640436002",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "8194278582612",
+    "liquidityY": "98802011445",
+    "binStep": 20,
+    "_vaultA": "GNGNUN9ibF6Dd77hHNGPReyDstK6yLZBxpzX2hhS65yf",
+    "_vaultB": "EexHXzasDJxTJLdgmny8mbhAN64TEnqCSkBovWpZ9mJr",
+    "_vaultMintA": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+    "_vaultMintB": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "xReserve": "8194278582612",
+    "yReserve": "98802011445",
+    "midPrice": 12.057438668811523,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337344
+  },
+  {
+    "poolAddress": "2gdjgchz31VdaAxmERiAbTAJbzAtGBei7LAwAMV45P1M",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+      "symbol": "cbBTC",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "LBTCgU4b3wsFKsPwBn1rRZDx5DoFutM6RPiEt1TPDsY",
+      "symbol": "LBTC",
+      "decimals": 6
+    },
+    "baseMint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+    "quoteMint": "LBTCgU4b3wsFKsPwBn1rRZDx5DoFutM6RPiEt1TPDsY",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.000001,
+    "tvl": {
+      "tvl": 6475287.713369371
+    },
+    "volume24h": 353790.15968206065,
+    "_original": {
+      "id": "2gdjgchz31VdaAxmERiAbTAJbzAtGBei7LAwAMV45P1M",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+        "symbol": "cbBTC",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "LBTCgU4b3wsFKsPwBn1rRZDx5DoFutM6RPiEt1TPDsY",
+        "symbol": "LBTC",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 6475287.713369371
+      },
+      "fee": 0.000001,
+      "volume24h": 353790.15968206065,
+      "raw": {
+        "address": "2gdjgchz31VdaAxmERiAbTAJbzAtGBei7LAwAMV45P1M",
+        "name": "cbBTC-LBTC",
+        "mint_x": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+        "mint_y": "LBTCgU4b3wsFKsPwBn1rRZDx5DoFutM6RPiEt1TPDsY",
+        "reserve_x": "355tUC4DgRAEoveiK7HZZorDi4uUjUBgaXxxUu8n66kT",
+        "reserve_y": "FJ65qEyAcDAqFPNwHDtDw13awnBSeqb5HEVZhuP74dcL",
+        "reserve_x_amount": 2374448456,
+        "reserve_y_amount": 4759047850,
+        "bin_step": 1,
+        "base_fee_percentage": "0.01",
+        "max_fee_percentage": "0.0300001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "6475287.713369371",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 33.77956109336795,
+        "today_fees": 0,
+        "trade_volume_24h": 353790.15968206065,
+        "cumulative_trade_volume": "74573018.5600",
+        "cumulative_fee_volume": "7389.6600",
+        "apr": 0.0005216688831235113,
+        "apy": 0.19059003805776964,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 2.4369357657757176,
+          "hour_24": 33.77956109336795
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 0.000037634401337012945,
+          "hour_24": 0.0005216688831235113
+        },
+        "volume": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0,
+          "hour_4": 0,
+          "hour_12": 25458.887433049764,
+          "hour_24": 353790.15968206065
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "2374448456",
+      "yReserve": "4759047850",
+      "realPriceFromReserves": "2004.2750719538045007",
+      "priceCalculation": {
+        "xReserveRaw": "2374448456",
+        "yReserveRaw": "4759047850",
+        "xReserveAdjusted": "2.374448456",
+        "yReserveAdjusted": "4759.04785",
+        "realPrice": "2004.2750719538045007",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "1466028379",
+    "liquidityY": "5667829334",
+    "binStep": 1,
+    "_vaultA": "355tUC4DgRAEoveiK7HZZorDi4uUjUBgaXxxUu8n66kT",
+    "_vaultB": "FJ65qEyAcDAqFPNwHDtDw13awnBSeqb5HEVZhuP74dcL",
+    "_vaultMintA": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+    "_vaultMintB": "LBTCgU4b3wsFKsPwBn1rRZDx5DoFutM6RPiEt1TPDsY",
+    "xReserve": "1466028379",
+    "yReserve": "5667829334",
+    "midPrice": 3866.111608198275,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337351
+  },
+  {
+    "poolAddress": "J27e5izvX4nbaaRDjMKv7DogQzcPidCAECxzE6rK4bF7",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
+      "symbol": "JLP",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6
+    },
+    "baseMint": "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
+    "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.000014999999999999999,
+    "tvl": {
+      "tvl": 3905997.1812650366
+    },
+    "volume24h": 654424.8547504297,
+    "_original": {
+      "id": "J27e5izvX4nbaaRDjMKv7DogQzcPidCAECxzE6rK4bF7",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
+        "symbol": "JLP",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 3905997.1812650366
+      },
+      "fee": 0.000014999999999999999,
+      "volume24h": 654424.8547504297,
+      "raw": {
+        "address": "J27e5izvX4nbaaRDjMKv7DogQzcPidCAECxzE6rK4bF7",
+        "name": "JLP-USDC",
+        "mint_x": "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
+        "mint_y": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "reserve_x": "7oVR2PnDc3tYsKBrvs8WJzb8jYRYhUjC3uDeMPGQFfPq",
+        "reserve_y": "BDtKzGh8MAH2wZR8MQDG2RZZ1HuecGoJn4XtJ4osimAi",
+        "reserve_x_amount": 786174978840,
+        "reserve_y_amount": 214421440765,
+        "bin_step": 15,
+        "base_fee_percentage": "0.15",
+        "max_fee_percentage": "0.9768751",
+        "protocol_fee_percentage": "5",
+        "liquidity": "3905997.1812650366",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 938.77827694662,
+        "today_fees": 0,
+        "trade_volume_24h": 654424.8547504297,
+        "cumulative_trade_volume": "302418021.2200",
+        "cumulative_fee_volume": "438339.4000",
+        "apr": 0.024034279426760306,
+        "apy": 9.16764907580696,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 9.36285095170219,
+          "hour_4": 55.61159736742861,
+          "hour_12": 552.844824697316,
+          "hour_24": 938.77827694662
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0.0002397044984213184,
+          "hour_4": 0.0014237490399165538,
+          "hour_12": 0.014153743565126331,
+          "hour_24": 0.024034279426760306
+        },
+        "volume": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 6570.4064048061355,
+          "hour_4": 38965.313048475145,
+          "hour_12": 385842.14206576644,
+          "hour_24": 654424.8547504297
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "786174978840",
+      "yReserve": "214421440765",
+      "realPriceFromReserves": "272.74009798859092879",
+      "priceCalculation": {
+        "xReserveRaw": "786174978840",
+        "yReserveRaw": "214421440765",
+        "xReserveAdjusted": "786.17497884",
+        "yReserveAdjusted": "214421.440765",
+        "realPrice": "272.74009798859092879",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "801053226377",
+    "liquidityY": "653448578976",
+    "binStep": 15,
+    "_vaultA": "7oVR2PnDc3tYsKBrvs8WJzb8jYRYhUjC3uDeMPGQFfPq",
+    "_vaultB": "BDtKzGh8MAH2wZR8MQDG2RZZ1HuecGoJn4XtJ4osimAi",
+    "_vaultMintA": "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
+    "_vaultMintB": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "xReserve": "801053226377",
+    "yReserve": "653448578976",
+    "midPrice": 815.736779354119,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337349
+  },
+  {
+    "poolAddress": "AsSyvUnbfaZJPRrNh3kUuvZTeHKoMVWEoHz86f4Q5D9x",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+      "symbol": "MET",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9
+    },
+    "baseMint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+    "quoteMint": "So11111111111111111111111111111111111111112",
+    "baseDecimals": 9,
+    "quoteDecimals": 9,
+    "fee": 0.00002,
+    "tvl": {
+      "tvl": 1185002.5218907886
+    },
+    "volume24h": 2642726.7410818194,
+    "_original": {
+      "id": "AsSyvUnbfaZJPRrNh3kUuvZTeHKoMVWEoHz86f4Q5D9x",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+        "symbol": "MET",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "So11111111111111111111111111111111111111112",
+        "symbol": "SOL",
+        "decimals": 9
+      },
+      "liquidity": {
+        "tvl": 1185002.5218907886
+      },
+      "fee": 0.00002,
+      "volume24h": 2642726.7410818194,
+      "raw": {
+        "address": "AsSyvUnbfaZJPRrNh3kUuvZTeHKoMVWEoHz86f4Q5D9x",
+        "name": "MET-SOL",
+        "mint_x": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+        "mint_y": "So11111111111111111111111111111111111111112",
+        "reserve_x": "2xRYxYShMQG8X9bSvjNmFoGPxhT7cuRu33vLTGATWgjy",
+        "reserve_y": "8iYZxkLjdKYREtFC21zttouLYR5BHH5LqPXaLERdrGxv",
+        "reserve_x_amount": 3064259425294,
+        "reserve_y_amount": 1394233710304,
+        "bin_step": 20,
+        "base_fee_percentage": "0.2",
+        "max_fee_percentage": "1.1800001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "1185002.5218907886",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 5113.184565176834,
+        "today_fees": 170.4405380032245,
+        "trade_volume_24h": 2642726.7410818194,
+        "cumulative_trade_volume": "169488378.8900",
+        "cumulative_fee_volume": "340074.7700",
+        "apr": 0.4314914500787934,
+        "apy": 381.41315316190634,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 35.40026921114511,
+          "hour_1": 116.04619462414537,
+          "hour_2": 170.9532429265211,
+          "hour_4": 356.292188108873,
+          "hour_12": 1407.3909104909308,
+          "hour_24": 5113.184565176834
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0.0029873581327624927,
+          "hour_1": 0.009792906975335563,
+          "hour_2": 0.014426403300285667,
+          "hour_4": 0.03006678732973274,
+          "hour_12": 0.1187669126851561,
+          "hour_24": 0.4314914500787934
+        },
+        "volume": {
+          "min_30": 18537.046957244416,
+          "hour_1": 60513.68162745694,
+          "hour_2": 89332.17071057924,
+          "hour_4": 186457.18738034568,
+          "hour_12": 736986.5371883531,
+          "hour_24": 2642726.7410818194
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "3064259425294",
+      "yReserve": "1394233710304",
+      "realPriceFromReserves": "454.99858752012500223",
+      "priceCalculation": {
+        "xReserveRaw": "3064259425294",
+        "yReserveRaw": "1394233710304",
+        "xReserveAdjusted": "3064.259425294",
+        "yReserveAdjusted": "1394233.710304",
+        "realPrice": "454.99858752012500223",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json",
+      "quoteDecimals": 9
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "3754746114075",
+    "liquidityY": "352993120174",
+    "binStep": 20,
+    "_vaultA": "2xRYxYShMQG8X9bSvjNmFoGPxhT7cuRu33vLTGATWgjy",
+    "_vaultB": "8iYZxkLjdKYREtFC21zttouLYR5BHH5LqPXaLERdrGxv",
+    "_vaultMintA": "METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL",
+    "_vaultMintB": "So11111111111111111111111111111111111111112",
+    "xReserve": "3754746114075",
+    "yReserve": "352993120174",
+    "midPrice": 0.09401251361597363,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337547
+  },
+  {
+    "poolAddress": "BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6
+    },
+    "baseMint": "So11111111111111111111111111111111111111112",
+    "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.00002,
+    "tvl": {
+      "tvl": 3730171.1385085685
+    },
+    "volume24h": 2475190.5317888935,
+    "_original": {
+      "id": "BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "So11111111111111111111111111111111111111112",
+        "symbol": "SOL",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 3730171.1385085685
+      },
+      "fee": 0.00002,
+      "volume24h": 2475190.5317888935,
+      "raw": {
+        "address": "BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh",
+        "name": "SOL-USDC",
+        "mint_x": "So11111111111111111111111111111111111111112",
+        "mint_y": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "reserve_x": "FMzVsENjscefpAtUJYBUTeJAYaKNfFQBHjTZE1AQRFYY",
+        "reserve_y": "7du3jFJK4rhf9JnZSQmhr6qPkgdQyJ88528qyxpYPPtL",
+        "reserve_x_amount": 14197859436834,
+        "reserve_y_amount": 1778484983335,
+        "bin_step": 20,
+        "base_fee_percentage": "0.2",
+        "max_fee_percentage": "1.1800001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "3730171.1385085685",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 4728.746280546092,
+        "today_fees": 64.22691133990605,
+        "trade_volume_24h": 2475190.5317888935,
+        "cumulative_trade_volume": "5108118621.0300",
+        "cumulative_fee_volume": "10114299.3300",
+        "apr": 0.1267702232674714,
+        "apy": 58.7909343115367,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 1.3748837099882052e-7,
+          "hour_1": 32.11498642130483,
+          "hour_2": 96.51998170980633,
+          "hour_4": 418.1171122268735,
+          "hour_12": 3078.502620533272,
+          "hour_24": 4728.746280546092
+        },
+        "fee_tvl_ratio": {
+          "min_30": 3.685846195619657e-12,
+          "hour_1": 0.0008609520911725605,
+          "hour_2": 0.002587548349012154,
+          "hour_4": 0.011209059764320866,
+          "hour_12": 0.08252979571774145,
+          "hour_24": 0.1267702232674714
+        },
+        "volume": {
+          "min_30": 0.00000783683714693277,
+          "hour_1": 16902.623695715967,
+          "hour_2": 50788.927183392356,
+          "hour_4": 219459.37086896962,
+          "hour_12": 1611359.6798253155,
+          "hour_24": 2475190.5317888935
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "14197859436834",
+      "yReserve": "1778484983335",
+      "realPriceFromReserves": "125.2643041894762403",
+      "priceCalculation": {
+        "xReserveRaw": "14197859436834",
+        "yReserveRaw": "1778484983335",
+        "xReserveAdjusted": "14197.859436834",
+        "yReserveAdjusted": "1778484.983335",
+        "realPrice": "125.2643041894762403",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json",
+      "baseDecimals": 9
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "15150197435181",
+    "liquidityY": "1150341772054",
+    "binStep": 20,
+    "_vaultA": "FMzVsENjscefpAtUJYBUTeJAYaKNfFQBHjTZE1AQRFYY",
+    "_vaultB": "7du3jFJK4rhf9JnZSQmhr6qPkgdQyJ88528qyxpYPPtL",
+    "_vaultMintA": "So11111111111111111111111111111111111111112",
+    "_vaultMintB": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "xReserve": "15150197435181",
+    "yReserve": "1150341772054",
+    "midPrice": 75.92916045983243,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337549
+  },
+  {
+    "poolAddress": "EXXfbVutbuexDZtPw8pkSvWxLFoUMBHd544CAGkmtPZm",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "JDzPbXboQYWVmdxXS3LbvjM52RtsV1QaSv2AzoCiai2o",
+      "symbol": "FO",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "decimals": 6
+    },
+    "baseMint": "JDzPbXboQYWVmdxXS3LbvjM52RtsV1QaSv2AzoCiai2o",
+    "quoteMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.000001,
+    "tvl": {
+      "tvl": 4704329.028719801
+    },
+    "volume24h": 8417460.247479102,
+    "_original": {
+      "id": "EXXfbVutbuexDZtPw8pkSvWxLFoUMBHd544CAGkmtPZm",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "JDzPbXboQYWVmdxXS3LbvjM52RtsV1QaSv2AzoCiai2o",
+        "symbol": "FO",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "symbol": "USDT",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 4704329.028719801
+      },
+      "fee": 0.000001,
+      "volume24h": 8417460.247479102,
+      "raw": {
+        "address": "EXXfbVutbuexDZtPw8pkSvWxLFoUMBHd544CAGkmtPZm",
+        "name": "FO-USDT",
+        "mint_x": "JDzPbXboQYWVmdxXS3LbvjM52RtsV1QaSv2AzoCiai2o",
+        "mint_y": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "reserve_x": "DUPWJ2V3MQSEchkQiVxpMTE1DvvNLug62RPtgUwafjNk",
+        "reserve_y": "HcUQGGZChJhdywtHf8hnUEngYDg3D1xVGFCbzwHHMZr6",
+        "reserve_x_amount": 6662683748290,
+        "reserve_y_amount": 2016107226859,
+        "bin_step": 10,
+        "base_fee_percentage": "0.01",
+        "max_fee_percentage": "0.5000001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "4704329.028719801",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 809.2939204163633,
+        "today_fees": 0.5892097727782862,
+        "trade_volume_24h": 8417460.247479102,
+        "cumulative_trade_volume": "386499394.6300",
+        "cumulative_fee_volume": "50286.8700",
+        "apr": 0.017203174256639912,
+        "apy": 6.479914548169541,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0.32887326894045804,
+          "hour_1": 0.4721828676220064,
+          "hour_2": 11.194055869272596,
+          "hour_4": 164.57241457919486,
+          "hour_12": 784.1145833208549,
+          "hour_24": 809.2939204163633
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0.000006990864519311801,
+          "hour_1": 0.000010037199029645731,
+          "hour_2": 0.00023795223082682327,
+          "hour_4": 0.0034983185396787663,
+          "hour_12": 0.01666793667139047,
+          "hour_24": 0.017203174256639912
+        },
+        "volume": {
+          "min_30": 3189.9063181508163,
+          "hour_1": 4698.105291834768,
+          "hour_2": 117558.82888613746,
+          "hour_4": 1732063.4482586188,
+          "hour_12": 8228447.940540621,
+          "hour_24": 8417460.247479102
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "6662683748290",
+      "yReserve": "2016107226859",
+      "realPriceFromReserves": "302.59686682208811761",
+      "priceCalculation": {
+        "xReserveRaw": "6662683748290",
+        "yReserveRaw": "2016107226859",
+        "xReserveAdjusted": "6662.68374829",
+        "yReserveAdjusted": "2016107.226859",
+        "realPrice": "302.59686682208811761",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "6694052751202",
+    "liquidityY": "2010888887647",
+    "binStep": 10,
+    "_vaultA": "DUPWJ2V3MQSEchkQiVxpMTE1DvvNLug62RPtgUwafjNk",
+    "_vaultB": "HcUQGGZChJhdywtHf8hnUEngYDg3D1xVGFCbzwHHMZr6",
+    "_vaultMintA": "JDzPbXboQYWVmdxXS3LbvjM52RtsV1QaSv2AzoCiai2o",
+    "_vaultMintB": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    "xReserve": "6694052751202",
+    "yReserve": "2010888887647",
+    "midPrice": 300.3993189754772,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337549
+  },
+  {
+    "poolAddress": "F1KKNyUCsQcZLRjwQ4abX6Ri8gDAQ46nHwSHFKA5sFQv",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "decimals": 6
+    },
+    "quoteToken": {
+      "mint": "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+      "symbol": "CLOUD",
+      "decimals": 6
+    },
+    "baseMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "quoteMint": "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+    "baseDecimals": 6,
+    "quoteDecimals": 6,
+    "fee": 0.00002,
+    "tvl": {
+      "tvl": 2686174.5490014604
+    },
+    "volume24h": 40249.047951509805,
+    "_original": {
+      "id": "F1KKNyUCsQcZLRjwQ4abX6Ri8gDAQ46nHwSHFKA5sFQv",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+        "symbol": "CLOUD",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 2686174.5490014604
+      },
+      "fee": 0.00002,
+      "volume24h": 40249.047951509805,
+      "raw": {
+        "address": "F1KKNyUCsQcZLRjwQ4abX6Ri8gDAQ46nHwSHFKA5sFQv",
+        "name": "USDC-CLOUD",
+        "mint_x": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "mint_y": "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+        "reserve_x": "4bi7CDbp3HpybnKoMd1g3LDLhT6c5WF9GKT6cEfKBZpC",
+        "reserve_y": "3qoB4PJrfRS3Q5oE8AUm1pYf7BLUyUGn3Tv8kELSB8RH",
+        "reserve_x_amount": 411094111757,
+        "reserve_y_amount": 31974802190660530,
+        "bin_step": 20,
+        "base_fee_percentage": "0.2",
+        "max_fee_percentage": "1.1800001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "2686174.5490014604",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 76.65369377889215,
+        "today_fees": 0.01780377155543575,
+        "trade_volume_24h": 40249.047951509805,
+        "cumulative_trade_volume": "394050735.8200",
+        "cumulative_fee_volume": "843186.5700",
+        "apr": 0.00285363785489617,
+        "apy": 1.047006104373649,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0.032698892278241486,
+          "hour_4": 2.5332252300256153,
+          "hour_12": 50.3045104529063,
+          "hour_24": 76.65369377889215
+        },
+        "fee_tvl_ratio": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 0.0000012173033316244002,
+          "hour_4": 0.00009430605434659109,
+          "hour_12": 0.0018727193462392884,
+          "hour_24": 0.00285363785489617
+        },
+        "volume": {
+          "min_30": 0,
+          "hour_1": 0,
+          "hour_2": 17.20945387797092,
+          "hour_4": 1328.8319807304892,
+          "hour_12": 26411.053606147176,
+          "hour_24": 40249.047951509805
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "411094111757",
+      "yReserve": "31974802190660530",
+      "realPriceFromReserves": "77779762.045244306922",
+      "priceCalculation": {
+        "xReserveRaw": "411094111757",
+        "yReserveRaw": "31974802190660530",
+        "xReserveAdjusted": "411.094111757",
+        "yReserveAdjusted": "31974802190.66053",
+        "realPrice": "77779762.045244306922",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "645048773873",
+    "liquidityY": "29219144130027842",
+    "binStep": 20,
+    "_vaultA": "4bi7CDbp3HpybnKoMd1g3LDLhT6c5WF9GKT6cEfKBZpC",
+    "_vaultB": "3qoB4PJrfRS3Q5oE8AUm1pYf7BLUyUGn3Tv8kELSB8RH",
+    "_vaultMintA": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "_vaultMintB": "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+    "xReserve": "645048773873",
+    "yReserve": "29219144130027842",
+    "midPrice": 45297.57332083641,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337550
+  },
+  {
+    "poolAddress": "H1tk6dsTZniLopJPnHnNQ4L2PDSp7he1vS7sTLeNLZMo",
+    "dex": "meteora",
+    "baseToken": {
+      "mint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+      "symbol": "JupSOL",
+      "decimals": 9
+    },
+    "quoteToken": {
+      "mint": "5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm",
+      "symbol": "INF",
+      "decimals": 6
+    },
+    "baseMint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+    "quoteMint": "5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm",
+    "baseDecimals": 9,
+    "quoteDecimals": 6,
+    "fee": 0.000001,
+    "tvl": {
+      "tvl": 1237314.7087558822
+    },
+    "volume24h": 1977379.1522786175,
+    "_original": {
+      "id": "H1tk6dsTZniLopJPnHnNQ4L2PDSp7he1vS7sTLeNLZMo",
+      "dex": "meteora",
+      "poolType": "DLMM",
+      "baseToken": {
+        "mint": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+        "symbol": "JupSOL",
+        "decimals": 9
+      },
+      "quoteToken": {
+        "mint": "5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm",
+        "symbol": "INF",
+        "decimals": 6
+      },
+      "liquidity": {
+        "tvl": 1237314.7087558822
+      },
+      "fee": 0.000001,
+      "volume24h": 1977379.1522786175,
+      "raw": {
+        "address": "H1tk6dsTZniLopJPnHnNQ4L2PDSp7he1vS7sTLeNLZMo",
+        "name": "JupSOL-INF",
+        "mint_x": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+        "mint_y": "5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm",
+        "reserve_x": "HztgLKfQcuMbCde6kVMVnj2iegh9iv793dxJ5Mgw77Bu",
+        "reserve_y": "7g8zSDYAq8SadSSu7bXA5Tc4zJNU9A6Qagij9Vo4T7jM",
+        "reserve_x_amount": 3862442772211,
+        "reserve_y_amount": 3286030593407,
+        "bin_step": 1,
+        "base_fee_percentage": "0.01",
+        "max_fee_percentage": "0.0300001",
+        "protocol_fee_percentage": "5",
+        "liquidity": "1237314.7087558822",
+        "reward_mint_x": "11111111111111111111111111111111",
+        "reward_mint_y": "11111111111111111111111111111111",
+        "fees_24h": 396.8316758440584,
+        "today_fees": 0.05909025310968661,
+        "trade_volume_24h": 1977379.1522786175,
+        "cumulative_trade_volume": "670498865",
+        "cumulative_fee_volume": "72765.3900",
+        "apr": 0.032072008280178935,
+        "apy": 12.416896177153047,
+        "farm_apr": 0,
+        "farm_apy": 0,
+        "hide": false,
+        "is_blacklisted": false,
+        "fees": {
+          "min_30": 0.003566118075987279,
+          "hour_1": 0.036116522678218944,
+          "hour_2": 0.07104732128875023,
+          "hour_4": 0.12354272927544262,
+          "hour_12": 386.1130172831383,
+          "hour_24": 396.8316758440584
+        },
+        "fee_tvl_ratio": {
+          "min_30": 2.8821431207045174e-7,
+          "hour_1": 0.0000029189439374348055,
+          "hour_2": 0.000005742057439872204,
+          "hour_4": 0.00000998474586951808,
+          "hour_12": 0.03120572434408173,
+          "hour_24": 0.032072008280178935
+        },
+        "volume": {
+          "min_30": 37.532020332457094,
+          "hour_1": 380.167206252764,
+          "hour_2": 747.8380315145391,
+          "hour_4": 1300.3946361677026,
+          "hour_12": 1864630.5817075444,
+          "hour_24": 1977379.1522786175
+        },
+        "tags": [],
+        "launchpad": null,
+        "is_verified": true
+      },
+      "xReserve": "3862442772211",
+      "yReserve": "3286030593407",
+      "realPriceFromReserves": "850.76486234279113716",
+      "priceCalculation": {
+        "xReserveRaw": "3862442772211",
+        "yReserveRaw": "3286030593407",
+        "xReserveAdjusted": "3862.442772211",
+        "yReserveAdjusted": "3286030.593407",
+        "realPrice": "850.76486234279113716",
+        "baseDecimals": 9,
+        "quoteDecimals": 6
+      },
+      "_source": "pools-with-real-reserves.json"
+    },
+    "poolType": "dlmm",
+    "type": "dlmm",
+    "liquidityX": "6501656642160",
+    "liquidityY": "1138731081845",
+    "binStep": 1,
+    "_vaultA": "HztgLKfQcuMbCde6kVMVnj2iegh9iv793dxJ5Mgw77Bu",
+    "_vaultB": "7g8zSDYAq8SadSSu7bXA5Tc4zJNU9A6Qagij9Vo4T7jM",
+    "_vaultMintA": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+    "_vaultMintB": "5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm",
+    "xReserve": "6501656642160",
+    "yReserve": "1138731081845",
+    "midPrice": 175.1447584083258,
+    "_reserveSource": "rpc_vault_balances",
+    "_reserveTimestamp": 1765697337548
+  }
+]
