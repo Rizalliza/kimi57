@@ -34,17 +34,19 @@ describe('processSwap CPMM math', () => {
         const newX = xHuman + dxAfterFee;
         const newY = k / newX;
         const expectedDy = yHuman - newY;
-        const expectedExecPrice = expectedDy / dxHuman; // execution price = dy/dx
+        const expectedExecPrice = expectedDy / dxHuman; // effective rate including fee + slippage
         const expectedMidPrice = yHuman / xHuman;
         const expectedFee = fee * dxHuman;
         const expectedImpactPct = ((expectedMidPrice - expectedExecPrice) / expectedMidPrice) * 100;
 
         const toNum = (x) => Number(x);
+        const tolPrice = 1e-9;
+        const tolPct = 1e-6;
 
-        assert.ok(Math.abs(toNum(dyHuman) - expectedDy) < 1e-9, 'dyHuman should match CPMM math');
-        assert.ok(Math.abs(toNum(executionPrice) - expectedExecPrice) < 1e-9, 'executionPrice should align with dy/dx');
-        assert.ok(Math.abs(toNum(feePaidHuman) - expectedFee) < 1e-6, 'feePaidHuman should apply fee rate to dx');
-        assert.ok(Math.abs(toNum(priceImpactPct) - expectedImpactPct) < 1e-3, 'priceImpactPct should reflect deviation from mid-price');
-        assert.ok(Math.abs(toNum(midPrice) - expectedMidPrice) < 1e-6, 'midPrice should be y/x');
+        assert.ok(Math.abs(toNum(dyHuman) - expectedDy) < tolPrice, 'dyHuman should match CPMM math');
+        assert.ok(Math.abs(toNum(executionPrice) - expectedExecPrice) < tolPrice, 'executionPrice should align with dy/dx');
+        assert.ok(Math.abs(toNum(feePaidHuman) - expectedFee) < tolPrice, 'feePaidHuman should apply fee rate to dx');
+        assert.ok(Math.abs(toNum(priceImpactPct) - expectedImpactPct) < tolPct, 'priceImpactPct should reflect deviation from mid-price');
+        assert.ok(Math.abs(toNum(midPrice) - expectedMidPrice) < tolPrice, 'midPrice should be y/x');
     });
 });
