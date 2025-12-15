@@ -78,7 +78,7 @@ describe('PrecisionMath', () => {
     test('should handle large numbers without precision loss', () => {
       const large = '999999999999999999999999999.123456789';
       const result = PrecisionMath.add(large, '1');
-      expect(result.toString()).toBe('999999999999999999999999999.123456789');
+      expect(result.toString()).toBe('1000000000000000000000000000.123456789');
     });
 
     test('should handle small numbers without precision loss', () => {

@@ -221,8 +221,3 @@ export class AmmCalculator {
     return PrecisionMath.mul(amountOut, slippageMultiplier);
   }
 }
-
-// Helper function to calculate absolute value
-PrecisionMath.abs = function(value: Decimal): Decimal {
-  return value.abs();
-};

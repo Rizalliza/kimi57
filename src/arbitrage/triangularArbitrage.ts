@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
 import { PrecisionMath } from '../utils/precisionMath';
-import { SwapResult } from '../utils/ammCalculator';
+import { SwapResult, AmmCalculator } from '../utils/ammCalculator';
 
 /**
  * Represents a DEX pool in an arbitrage route
@@ -243,7 +243,6 @@ export class TriangularArbitrage {
         if (!pool.reserveA || !pool.reserveB) {
           throw new Error('CPMM pool missing reserve data');
         }
-        const { AmmCalculator } = require('../utils/ammCalculator');
         return AmmCalculator.calculateCpmmSwap(
           amountIn,
           pool.reserveA,
@@ -257,7 +256,6 @@ export class TriangularArbitrage {
         if (!pool.sqrtPrice || !pool.liquidity) {
           throw new Error('CLMM pool missing sqrt price or liquidity data');
         }
-        const { AmmCalculator } = require('../utils/ammCalculator');
         return AmmCalculator.calculateClmmSwap(
           amountIn,
           pool.sqrtPrice,
@@ -270,7 +268,6 @@ export class TriangularArbitrage {
         if (!pool.activeBinPrice || !pool.binLiquidity) {
           throw new Error('DLMM pool missing bin data');
         }
-        const { AmmCalculator } = require('../utils/ammCalculator');
         return AmmCalculator.calculateDlmmSwap(
           amountIn,
           pool.activeBinPrice,

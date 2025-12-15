@@ -110,4 +110,11 @@ export class PrecisionMath {
   static toNumber(value: Decimal): number {
     return value.toNumber();
   }
+
+  /**
+   * Returns absolute value of a number
+   */
+  static abs(value: string | number | Decimal): Decimal {
+    return new Decimal(value).abs();
+  }
 }

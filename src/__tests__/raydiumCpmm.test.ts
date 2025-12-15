@@ -13,8 +13,8 @@ describe('RaydiumCpmm', () => {
 
       // Expected output with 0.25% fee:
       // amountInAfterFee = 10 * (1 - 0.0025) = 9.975
-      // amountOut = (9.975 * 2000) / (1000 + 9.975) = 19.751237623762376
-      expect(PrecisionMath.format(result.amountOut, 6)).toBe('19.751238');
+      // amountOut = (9.975 * 2000) / (1000 + 9.975) = 19.752964...
+      expect(PrecisionMath.format(result.amountOut, 6)).toBe('19.752964');
     });
 
     test('should handle custom fee rate', () => {
@@ -27,8 +27,8 @@ describe('RaydiumCpmm', () => {
 
       // With 1% fee:
       // amountInAfterFee = 10 * 0.99 = 9.9
-      // amountOut = (9.9 * 2000) / (1000 + 9.9) = 19.602376237623762
-      expect(PrecisionMath.format(result.amountOut, 6)).toBe('19.602376');
+      // amountOut = (9.9 * 2000) / (1000 + 9.9) = 19.605901...
+      expect(PrecisionMath.format(result.amountOut, 6)).toBe('19.605901');
     });
 
     test('should calculate correct price impact', () => {
