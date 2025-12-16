@@ -504,11 +504,59 @@ function getLiquidityScore(pool) {
   }
 }
 
+/**
+ * Quote a swap using appropriate SDK for the pool type
+ * Returns accurate quotes for DLMM using Meteora SDK
+ * Falls back to null for CPMM (uses reserve-based math which is correct)
+ */
+async function quoteSwap({ connection, pool, inputMint, outputMint, dxAtomic }) {
+  if (!connection) {
+    console.warn('quoteSwap: connection required');
+    return null;
+  }
+  
+  const type = (pool.type || '').toString().toLowerCase();
+  
+  // Handle DLMM with Meteora SDK
+  if (type === 'dlmm') {
+    try {
+      const BN = require('bn.js');
+      const { DLMM } = require('@meteora-ag/dlmm');
+      
+      const dlmmPool = await DLMM.create(connection, new PublicKey(pool.poolAddress));
+      
+      // Determine swap direction: swapForY means base->quote
+      const swapForY = (inputMint === pool.baseMint);
+      
+      const quote = await dlmmPool.swapQuote(
+        new BN(dxAtomic.toString()),
+        swapForY,
+        new BN(10), // 0.1% slippage tolerance in bps
+        false // exactIn mode
+      );
+      
+      return {
+        dyAtomic: quote.outAmount.toString(),
+        outDecimals: swapForY ? pool.quoteDecimals : pool.baseDecimals,
+        feePaidAtomic: quote.fee?.toString() || '0',
+        priceImpactPct: quote.priceImpactPct || '0'
+      };
+    } catch (e) {
+      console.error(`DLMM SDK quote failed for ${pool.poolAddress}: ${e.message}`);
+      return null;
+    }
+  }
+  
+  // For CPMM, return null to allow fallback to reserve-based math (which is correct)
+  return null;
+}
+
 module.exports = {
   loadPool,
   loadPools,
   toDecimal,
   attachSdkRawState,
   loadPoolsForPair,
-  loadSDK
+  loadSDK,
+  quoteSwap
 };
