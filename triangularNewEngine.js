@@ -118,7 +118,7 @@ function floorAtomicFromHuman(human, decimals) {
 // -------------------------
 // SDK adapter (optional)
 // -------------------------
-function tryLoadSdkAdapter() {
+function tryLoadSdkAdapter(connection) {
     try {
         // Optional. If it fails, engine still works with reserve-based CPMM approximation for dlmm/cpmm
         // and will SKIP clmm/whirlpool pools.
@@ -128,7 +128,7 @@ function tryLoadSdkAdapter() {
             return {
                 name: 'loaderSDK.quoteSwap',
                 async quoteSwap({ pool, inputMint, outputMint, dxAtomic }) {
-                    return await sdk.quoteSwap({ pool, inputMint, outputMint, dxAtomic });
+                    return await sdk.quoteSwap({ connection, pool, inputMint, outputMint, dxAtomic });
                 }
             };
         }
@@ -136,7 +136,7 @@ function tryLoadSdkAdapter() {
             return {
                 name: 'loaderSDK.simulateSwapAtomic',
                 async quoteSwap({ pool, inputMint, outputMint, dxAtomic }) {
-                    return await sdk.simulateSwapAtomic({ pool, inputMint, outputMint, dxAtomic });
+                    return await sdk.simulateSwapAtomic({ connection, pool, inputMint, outputMint, dxAtomic });
                 }
             };
         }
@@ -247,6 +247,7 @@ function indexPools(pools) {
 
 async function findTriangularArbitrage({
     pools,
+    connection,
     amountInAtomic,
     tokenA = MINT_SOL,
     tokenC = MINT_USDC,
@@ -259,7 +260,7 @@ async function findTriangularArbitrage({
     const tokenASet = new Set([tokenA, MINT_WSOL]);
     const tokenCSet = new Set([tokenC]);
 
-    const sdkAdapter = sdkFallback ? tryLoadSdkAdapter() : null;
+    const sdkAdapter = sdkFallback ? tryLoadSdkAdapter(connection) : null;
 
     const usable = (pools || []).filter(p => {
         if (!p.poolAddress || !p.baseMint || !p.quoteMint) return false;

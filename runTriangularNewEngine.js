@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const { Connection } = require('@solana/web3.js');
 const { loadAndEnrichPools, findTriangularArbitrage, MINT_SOL, MINT_USDC } = require('./triangularNewEngine.js');
 
 async function main() {
@@ -11,6 +12,12 @@ async function main() {
         .split(',')
         .map(s => s.trim())
         .filter(Boolean);
+
+    // Create Solana connection for SDK calls
+    const connection = new Connection(
+        rpcEndpoints[0] || 'https://api.mainnet-beta.solana.com',
+        'confirmed'
+    );
 
     console.log(`📦 Loading pools from: ${poolFile}`);
 
@@ -27,6 +34,7 @@ async function main() {
 
     const routes = await findTriangularArbitrage({
         pools,
+        connection,
         amountInAtomic: '1000000000', // 1 SOL
         tokenA: MINT_SOL,
         tokenC: MINT_USDC,
